@@ -33,14 +33,141 @@ variable "environment" {
 # Kubernetes & EKS Configuration
 ################################################################################
 
+variable "create_cluster" {
+  description = "Whether to create a new EKS cluster (true) or reference an existing one (false)"
+  type        = bool
+  default     = true
+  nullable    = false
+}
+
 variable "cluster_name" {
-  description = "Name of the existing EKS cluster"
+  description = "Name of the EKS cluster to create or reference"
   type        = string
   nullable    = false
 
   validation {
     condition     = length(var.cluster_name) > 0 && length(var.cluster_name) <= 100
     error_message = "Cluster name must be between 1 and 100 characters."
+  }
+}
+
+variable "kubernetes_version" {
+  description = "Kubernetes version to use for the EKS cluster"
+  type        = string
+  default     = "1.28"
+  nullable    = false
+
+  validation {
+    condition     = can(regex("^1\\.[0-9]{2}$", var.kubernetes_version))
+    error_message = "Kubernetes version must be in format 1.XX (e.g., 1.28)"
+  }
+}
+
+variable "subnet_ids" {
+  description = "List of subnet IDs for the EKS cluster and nodes"
+  type        = list(string)
+  nullable    = false
+
+  validation {
+    condition     = length(var.subnet_ids) >= 2
+    error_message = "At least 2 subnets are required for EKS cluster"
+  }
+}
+
+variable "cluster_security_group_ids" {
+  description = "List of security group IDs to attach to the EKS cluster"
+  type        = list(string)
+  default     = []
+  nullable    = false
+}
+
+variable "cluster_endpoint_public_access" {
+  description = "Enable public access to the EKS cluster endpoint"
+  type        = bool
+  default     = true
+  nullable    = false
+}
+
+variable "cluster_endpoint_public_access_cidrs" {
+  description = "List of CIDR blocks that can access the public EKS endpoint"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+  nullable    = false
+}
+
+variable "cluster_log_types" {
+  description = "List of control plane logging types to enable"
+  type        = list(string)
+  default     = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+  nullable    = false
+
+  validation {
+    condition = alltrue([
+      for log_type in var.cluster_log_types : contains(["api", "audit", "authenticator", "controllerManager", "scheduler"], log_type)
+    ])
+    error_message = "Valid log types are: api, audit, authenticator, controllerManager, scheduler"
+  }
+}
+
+variable "node_group_min_size" {
+  description = "Minimum number of nodes in the node group"
+  type        = number
+  default     = 2
+  nullable    = false
+
+  validation {
+    condition     = var.node_group_min_size > 0 && var.node_group_min_size <= 100
+    error_message = "Node group size must be between 1 and 100"
+  }
+}
+
+variable "node_group_max_size" {
+  description = "Maximum number of nodes in the node group"
+  type        = number
+  default     = 10
+  nullable    = false
+
+  validation {
+    condition     = var.node_group_max_size > 0 && var.node_group_max_size <= 100
+    error_message = "Node group size must be between 1 and 100"
+  }
+}
+
+variable "node_group_desired_size" {
+  description = "Desired number of nodes in the node group"
+  type        = number
+  default     = 3
+  nullable    = false
+
+  validation {
+    condition     = var.node_group_desired_size > 0 && var.node_group_desired_size <= 100
+    error_message = "Node group size must be between 1 and 100"
+  }
+}
+
+variable "node_instance_types" {
+  description = "List of EC2 instance types for the node group"
+  type        = list(string)
+  default     = ["t3.medium"]
+  nullable    = false
+
+  validation {
+    condition = alltrue([
+      for instance in var.node_instance_types : can(regex("^[a-z0-9]+\\.[a-z0-9]+$", instance))
+    ])
+    error_message = "Instance types must be valid AWS instance types (e.g., t3.medium)"
+  }
+}
+
+variable "node_disk_size" {
+  description = "Disk size in GB for each node"
+  type        = number
+  default     = 50
+  nullable    = false
+
+  validation {
+    condition     = var.node_disk_size >= 20 && var.node_disk_size <= 16384
+    error_message = "Disk size must be between 20 and 16384 GB"
   }
 }
 

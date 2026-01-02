@@ -29,6 +29,41 @@ output "eks_cluster_arn" {
   value       = data.aws_eks_cluster.cluster.arn
 }
 
+output "eks_cluster_created" {
+  description = "Whether a new EKS cluster was created"
+  value       = var.create_cluster
+}
+
+output "eks_cluster_status" {
+  description = "Status of the EKS cluster"
+  value       = try(aws_eks_cluster.main[0].status, "EXISTING")
+}
+
+output "eks_cluster_version" {
+  description = "Kubernetes version of the EKS cluster"
+  value       = try(aws_eks_cluster.main[0].version, var.kubernetes_version)
+}
+
+output "eks_node_group_id" {
+  description = "EKS node group ID"
+  value       = try(aws_eks_node_group.main[0].id, null)
+}
+
+output "eks_node_group_status" {
+  description = "Status of the EKS node group"
+  value       = try(aws_eks_node_group.main[0].status, null)
+}
+
+output "eks_cluster_role_arn" {
+  description = "ARN of the EKS cluster IAM role"
+  value       = try(aws_iam_role.eks_cluster_role[0].arn, null)
+}
+
+output "eks_node_role_arn" {
+  description = "ARN of the EKS node IAM role"
+  value       = try(aws_iam_role.eks_node_role[0].arn, null)
+}
+
 ################################################################################
 # Helm Release Outputs
 ################################################################################
