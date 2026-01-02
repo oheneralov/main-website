@@ -1,18 +1,9 @@
-import { Controller, Post, Body } from '@nestjs/common';
-import { CaptchaService } from './captcha.service';
+import { Controller, Get } from '@nestjs/common';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly captchaService: CaptchaService) {}
-
-  @Post('verify-captcha')
-  async verifyCaptcha(@Body('token') token: string): Promise<{ success: boolean }> {
-    const isValid = await this.captchaService.verifyCaptcha(token);
-
-    if (!isValid) {
-      return { success: false };
-    }
-
-    return { success: true };
+  @Get('status')
+  getStatus() {
+    return { status: 'ok', message: 'API is running' };
   }
 }

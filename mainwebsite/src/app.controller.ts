@@ -1,5 +1,4 @@
-import { Controller, Get, Post, Render, Body } from '@nestjs/common';
-import { CaptchaService } from './captcha.service';
+import { Controller, Get, Post, Body } from '@nestjs/common';
 import sgMail from '@sendgrid/mail';
 import { ContactService } from './contact/contact.service';
 import { LoggingService } from './logging.service';
@@ -7,15 +6,13 @@ import { LoggingService } from './logging.service';
 @Controller()
 export class AppController {
   constructor(
-    private readonly captchaService: CaptchaService,
     private readonly contactService: ContactService,
     private readonly loggingService: LoggingService,
   ) {}
 
   @Get()
-  @Render('index') // Render 'index' template
   getIndex() {
-    return { title: 'Welcome!', message: 'Do not use it directly' };
+    return { message: 'Welcome to AWS Info Website API' };
   }
 
   private async sendMail(name: string, email: string, message: string): Promise<void> {
@@ -41,18 +38,10 @@ export class AppController {
 
   @Post('contacts')
   async handleContactForm(@Body() body: any) {
-    const token = body['g-recaptcha-response'];
     const { name, email, message } = body;
 
     if (!name || !email || !message) {
       return { success: false, message: 'Missing required fields' };
-    }
-
-    // Verify CAPTCHA
-    const isCaptchaValid = await this.captchaService.verifyCaptcha(token);
-    if (!isCaptchaValid) {
-      this.loggingService.warn('CAPTCHA validation failed for email: ' + email);
-      return { success: false, message: 'CAPTCHA validation failed' };
     }
 
     try {

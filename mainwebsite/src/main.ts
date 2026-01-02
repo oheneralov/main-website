@@ -7,12 +7,11 @@ import { LoggingService } from './logging.service';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   
-  // Serve static files from the 'public' directory
-  app.useStaticAssets(join(__dirname, '..', 'public'));
+  // Enable CORS for local development
+  app.enableCors();
 
-  // Set up Handlebars as the template engine
-  app.setBaseViewsDir(join(__dirname, '..', 'views'));
-  app.setViewEngine('hbs');
+  // Serve static files from the 'public' directory (React app, assets, etc.)
+  app.useStaticAssets(join(__dirname, '..', 'public'));
 
   // Use the custom logging service
   const loggingService = app.get(LoggingService);
@@ -21,6 +20,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`Application running on port ${port}`);
+  console.log(`React frontend served from: http://localhost:${port}`);
 }
 bootstrap();
 

@@ -1,12 +1,10 @@
 # Staging Environment Variables
 # Usage: terraform apply -var-file="environments/staging.tfvars"
 
-project_id            = "clever-spirit-417020"
-region                = "us-central1"
+region                = "us-east-1"
 environment           = "staging"
-cluster_name          = "gcp-info-website-staging"
+cluster_name          = "aws-info-website-staging"
 kubernetes_namespace  = "staging"
-credentials_file      = "./clever-spirit-terraform-service-account.json"
 
 helm_chart_path       = "../helm-dir"
 helm_release_name     = "mainwebsite"
@@ -26,6 +24,9 @@ helm_set_values = {
 common_labels = {
   environment = "staging"
   managed_by  = "terraform"
-  project     = "gcp-info-website"
+  project     = "aws-info-website"
   team        = "platform"
 }
+
+terraform_state_bucket = "tf-state-staging-your-account-id"
+terraform_state_key    = "aws-info-website/terraform/staging"

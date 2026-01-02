@@ -1,40 +1,16 @@
 ################################################################################
-# GCP Configuration Variables
+# AWS Configuration Variables
 ################################################################################
 
-variable "project_id" {
-  description = "The GCP project ID where resources will be created"
-  type        = string
-  nullable    = false
-
-  validation {
-    condition     = can(regex("^[a-z][a-z0-9-]{4,28}[a-z0-9]$", var.project_id))
-    error_message = "Project ID must be a valid GCP project ID format."
-  }
-}
-
 variable "region" {
-  description = "The GCP region for resource deployment (e.g., us-central1, europe-west1)"
+  description = "The AWS region for resource deployment (e.g., us-east-1, eu-west-1)"
   type        = string
-  default     = "us-central1"
+  default     = "us-east-1"
   nullable    = false
 
   validation {
-    condition     = can(regex("^[a-z]+-[a-z]+[0-9]$", var.region))
-    error_message = "Region must be a valid GCP region format."
-  }
-}
-
-variable "credentials_file" {
-  description = "Path to GCP service account credentials JSON file (optional if GOOGLE_APPLICATION_CREDENTIALS is set)"
-  type        = string
-  default     = null
-  nullable    = true
-  sensitive   = true
-
-  validation {
-    condition     = var.credentials_file == null || can(file(var.credentials_file))
-    error_message = "Credentials file must exist and be readable, or leave null to use GOOGLE_APPLICATION_CREDENTIALS environment variable."
+    condition     = can(regex("^[a-z]{2}-[a-z]+-[0-9]{1}$", var.region))
+    error_message = "Region must be a valid AWS region format."
   }
 }
 
@@ -54,17 +30,17 @@ variable "environment" {
 }
 
 ################################################################################
-# Kubernetes & GKE Configuration
+# Kubernetes & EKS Configuration
 ################################################################################
 
 variable "cluster_name" {
-  description = "Name of the existing GKE cluster"
+  description = "Name of the existing EKS cluster"
   type        = string
   nullable    = false
 
   validation {
-    condition     = length(var.cluster_name) > 0 && length(var.cluster_name) <= 40
-    error_message = "Cluster name must be between 1 and 40 characters."
+    condition     = length(var.cluster_name) > 0 && length(var.cluster_name) <= 100
+    error_message = "Cluster name must be between 1 and 100 characters."
   }
 }
 
@@ -184,35 +160,35 @@ variable "common_labels" {
   type        = map(string)
   default = {
     managed_by = "terraform"
-    project    = "gcp-info-website"
+    project    = "aws-info-website"
   }
   nullable = false
 }
 
 ################################################################################
-# Terraform State Management (Google Cloud Storage Backend)
+# Terraform State Management (S3 Backend)
 ################################################################################
 
 variable "terraform_state_bucket" {
-  description = "GCS bucket name for storing Terraform state"
+  description = "S3 bucket name for storing Terraform state"
   type        = string
   nullable    = false
 
   validation {
-    condition     = can(regex("^[a-z0-9][a-z0-9._-]*[a-z0-9]$", var.terraform_state_bucket))
-    error_message = "Terraform state bucket must be a valid GCS bucket name."
+    condition     = can(regex("^[a-z0-9][a-z0-9.-]*[a-z0-9]$", var.terraform_state_bucket))
+    error_message = "Terraform state bucket must be a valid S3 bucket name."
   }
 }
 
-variable "terraform_state_prefix" {
-  description = "Prefix path in the GCS bucket for Terraform state files"
+variable "terraform_state_key" {
+  description = "S3 key path for Terraform state files"
   type        = string
-  default     = "gcp-info-website/terraform"
+  default     = "aws-info-website/terraform"
   nullable    = false
 
   validation {
-    condition     = length(var.terraform_state_prefix) > 0
-    error_message = "Terraform state prefix must not be empty."
+    condition     = length(var.terraform_state_key) > 0
+    error_message = "Terraform state key must not be empty."
   }
 }
 

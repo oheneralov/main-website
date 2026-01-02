@@ -4,8 +4,8 @@ terraform {
 
   # Required providers with explicit versions
   required_providers {
-    google = {
-      source  = "hashicorp/google"
+    aws = {
+      source  = "hashicorp/aws"
       version = "~> 5.0"
     }
     kubernetes = {
@@ -18,33 +18,33 @@ terraform {
     }
   }
 
-  # Remote state management in Google Cloud Storage
-  # GCS has built-in locking
+  # Remote state management in Amazon S3
+  # S3 with DynamoDB provides state locking
   # Backend configuration is provided via:
   # - Backend config file: terraform init -backend-config=backend-config.tfvars
-  # - Command line flags: terraform init -backend-config="bucket=..." -backend-config="prefix=..."
+  # - Command line flags: terraform init -backend-config="bucket=..." -backend-config="key=..."
   # - Environment file in each environment directory (dev.tfvars, staging.tfvars, production.tfvars)
-  backend "gcs" {
-    # Bucket and prefix are configured via backend-config during init
-    # Example: terraform init -backend-config="bucket=tf-state-bucket-name" -backend-config="prefix=gcp-info-website/terraform"
+  backend "s3" {
+    # Bucket and key are configured via backend-config during init
+    # Example: terraform init -backend-config="bucket=tf-state-bucket-name" -backend-config="key=aws-info-website/terraform"
+    # Uncomment below for DynamoDB state locking:
+    # dynamodb_table = "terraform-locks"
   }
 }
 
-# Google Cloud Provider Configuration
-# Credentials are sourced from GOOGLE_APPLICATION_CREDENTIALS environment variable
-# Set it via: export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json (Unix/Linux/macOS)
-#       or: $env:GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\service-account.json" (PowerShell)
-# Or pass via command line: terraform apply -var="credentials_file=/path/to/file.json"
-provider "google" {
-  credentials = var.credentials_file != null ? file(var.credentials_file) : null
-  project     = var.project_id
-  region      = var.region
+# AWS Provider Configuration
+# Credentials are sourced from AWS credentials file or environment variables
+# Set it via: export AWS_ACCESS_KEY_ID="..." AWS_SECRET_ACCESS_KEY="..." (Unix/Linux/macOS)
+#       or: $env:AWS_ACCESS_KEY_ID="..."; $env:AWS_SECRET_ACCESS_KEY="..." (PowerShell)
+# Or configure via AWS CLI: aws configure
+provider "aws" {
+  region = var.region
 
-  default_labels {
-    labels = {
+  default_tags {
+    tags = {
       managed_by  = "terraform"
       environment = var.environment
-      project     = "gcp-info-website"
+      project     = "aws-info-website"
     }
   }
 }

@@ -1,12 +1,10 @@
 # Development Environment Variables
 # Usage: terraform apply -var-file="environments/dev.tfvars"
 
-project_id            = "clever-spirit-417020"
-region                = "us-central1"
+region                = "us-east-1"
 environment           = "dev"
-cluster_name          = "gcp-info-website-dev"
+cluster_name          = "aws-info-website-dev"
 kubernetes_namespace  = "development"
-credentials_file      = "./clever-spirit-terraform-service-account.json"
 
 helm_chart_path       = "../helm-dir"
 helm_release_name     = "mainwebsite"
@@ -24,6 +22,9 @@ helm_set_values = {
 common_labels = {
   environment = "dev"
   managed_by  = "terraform"
-  project     = "gcp-info-website"
+  project     = "aws-info-website"
   team        = "platform"
 }
+
+terraform_state_bucket = "tf-state-dev-your-account-id"
+terraform_state_key    = "aws-info-website/terraform/dev"

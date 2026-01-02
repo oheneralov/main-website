@@ -1,11 +1,11 @@
-# Terraform Project - GCP Website Infrastructure
+# Terraform Project - AWS Website Infrastructure
 
 ## 📋 Overview
 
-This Terraform project manages the deployment of the GCP Info Website application on Google Kubernetes Engine (GKE). It handles:
-- GCP provider configuration and authentication
+This Terraform project manages the deployment of the AWS Info Website application on Amazon EKS (Elastic Kubernetes Service). It handles:
+- AWS provider configuration and authentication
 - Kubernetes and Helm provider setup
-- Helm chart deployment to GKE cluster
+- Helm chart deployment to EKS cluster
 - Multi-environment support (dev, staging, production)
 
 ## 🏗️ Project Structure
@@ -41,12 +41,11 @@ terraform/
 
 ### Prerequisites
 - Terraform >= 1.0
-- GCP account with appropriate permissions
-- GKE cluster already created
-- Service account credentials JSON file
-- kubectl configured for the GKE cluster
+- AWS account with appropriate permissions
+- EKS cluster already created
+- AWS CLI configured with credentials
+- kubectl configured for the EKS cluster
 - Helm >= 3.0 installed
-- gcloud CLI installed and configured
 
 ### 1. Initialize Terraform
 
@@ -124,53 +123,39 @@ curl https://sdk.cloud.google.com | bash
 exec -l $SHELL
 ```
 
-### GCP Setup
+### AWS Setup
 
-#### 1. Create GCP Service Account
+#### 1. Configure AWS Credentials
 ```bash
-# Set project ID
-export PROJECT_ID="your-gcp-project-id"
-gcloud config set project $PROJECT_ID
+# Option 1: Using AWS CLI
+aws configure
 
-# Create service account
-gcloud iam service-accounts create terraform-sa \
-  --display-name="Terraform Service Account"
+# Option 2: Using environment variables
+export AWS_ACCESS_KEY_ID="your-access-key"
+export AWS_SECRET_ACCESS_KEY="your-secret-key"
+export AWS_REGION="us-east-1"
 
-# Grant necessary roles
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member=serviceAccount:terraform-sa@$PROJECT_ID.iam.gserviceaccount.com \
-  --role=roles/container.admin
-
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member=serviceAccount:terraform-sa@$PROJECT_ID.iam.gserviceaccount.com \
-  --role=roles/compute.admin
-
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member=serviceAccount:terraform-sa@$PROJECT_ID.iam.gserviceaccount.com \
-  --role=roles/iam.serviceAccountUser
+# Verify credentials
+aws sts get-caller-identity
 ```
 
-#### 2. Generate and Store Credentials
+#### 2. Verify AWS Permissions
 ```bash
-# Create key file
-gcloud iam service-accounts keys create terraform-key.json \
-  --iam-account=terraform-sa@$PROJECT_ID.iam.gserviceaccount.com
+# Ensure you have permissions for EKS and S3
+aws iam list-user-policies --user-name $(aws iam get-user --query User.UserName --output text)
 
-# Set environment variable
-export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/terraform-key.json"
-
-# Store securely (never commit to version control)
-echo "terraform-key.json" >> .gitignore
+# Or check assumed role policies if using IAM role
+aws sts get-assumed-role-user
 ```
 
-#### 3. Configure GCP Access
+#### 3. Configure EKS Access
 ```bash
-# Authenticate gcloud
-gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
-gcloud config set project $PROJECT_ID
+# Update kubeconfig with EKS cluster credentials
+aws eks update-kubeconfig --name <cluster-name> --region us-east-1
 
 # Verify access
-gcloud container clusters list
+kubectl cluster-info
+kubectl get nodes
 ```
 
 ### Initial Setup Steps
@@ -178,7 +163,7 @@ gcloud container clusters list
 #### 1. Clone Repository and Navigate
 ```bash
 git clone <repository-url>
-cd gcp-info-website/terraform
+cd aws-info-website/terraform
 ```
 
 #### 2. Setup Environment Variables
@@ -186,12 +171,11 @@ Create a local environment configuration file:
 ```bash
 # Create .env file (not committed to git)
 cat > .env << EOF
-export TF_VAR_project_id="your-project-id"
-export TF_VAR_region="us-central1"
-export TF_VAR_credentials_file="$(pwd)/terraform-key.json"
-export TF_VAR_cluster_name="gcp-info-website-dev"
+export AWS_REGION="us-east-1"
+export AWS_PROFILE="default"
+export TF_VAR_region="us-east-1"
+export TF_VAR_cluster_name="aws-info-website-dev"
 export TF_VAR_environment="dev"
-export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/terraform-key.json"
 EOF
 
 # Source the environment
@@ -209,19 +193,47 @@ vi environments/staging.tfvars
 
 # Production
 vi environments/production.tfvars
+
+# Update the following placeholders:
+# - terraform_state_bucket: Replace "your-account-id" with your AWS account ID
+# - cluster_name: Ensure it matches your EKS cluster name
+# - region: Verify the AWS region matches your EKS cluster region
 ```
 
 #### 4. Initialize Terraform Backend
 ```bash
-# Initialize with local state (for testing)
+# Option 1: Initialize with local state (for testing)
 terraform init
 
-# Or with remote GCS backend (for production)
-# First create GCS bucket
-gsutil mb gs://$PROJECT_ID-terraform-state
+# Option 2: Initialize with S3 backend (for production)
+# First create S3 bucket
+aws s3 mb s3://tf-state-dev-<your-account-id> --region us-east-1
 
-# Then update backend configuration in terraform.tf and init
-terraform init -backend-config="bucket=$PROJECT_ID-terraform-state"
+# Enable versioning
+aws s3api put-bucket-versioning \
+  --bucket tf-state-dev-<your-account-id> \
+  --versioning-configuration Status=Enabled
+
+# Enable encryption
+aws s3api put-bucket-encryption \
+  --bucket tf-state-dev-<your-account-id> \
+  --server-side-encryption-configuration '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}'
+
+# Block public access
+aws s3api put-public-access-block \
+  --bucket tf-state-dev-<your-account-id> \
+  --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+
+# (Optional) Create DynamoDB table for state locking
+aws dynamodb create-table \
+  --table-name terraform-locks \
+  --attribute-definitions AttributeName=LockID,AttributeType=S \
+  --key-schema AttributeName=LockID,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST \
+  --region us-east-1
+
+# Initialize with backend config
+terraform init -backend-config=environments/backend-dev.tfvars
 ```
 
 #### 5. Validate Configuration
@@ -267,24 +279,23 @@ curl http://localhost:8080
 Install these plugins in Jenkins:
 - Pipeline (Declarative Pipeline)
 - GitHub or GitLab (depending on your VCS)
-- Google Kubernetes Engine (GKE)
+- Amazon Web Services (AWS) credentials plugin
 - Docker Pipeline
 - Terraform Plugin (or similar)
 - Credentials Binding Plugin
-- Google Cloud Storage Plugin
+- AWS S3 Plugin
 - Slack Notification Plugin (optional)
 
 #### Jenkins System Configuration
 
 1. **Manage Jenkins → Manage Credentials**
-   - Add GCP Service Account JSON credentials
-   - Credential ID: `gcp-service-account`
-   - Select JSON file from `terraform-key.json`
+   - Add AWS Access Key credentials (Access Key ID and Secret Access Key)
+   - Credential ID: `aws-credentials`
 
 2. **Manage Jenkins → Configure System**
-   - Google Kubernetes Engine
-   - Configure GCP project and credentials
-   - Configure Kubernetes clusters
+   - AWS Credentials
+   - Configure AWS region and credentials
+   - Configure EKS cluster access
 
 3. **Manage Jenkins → Configure Global Security**
    - Enable CSRF protection
@@ -306,9 +317,9 @@ pipeline {
     }
     
     environment {
-        GCP_PROJECT_ID = credentials('gcp-project-id')
-        GCP_REGION = 'us-central1'
-        GOOGLE_APPLICATION_CREDENTIALS = credentials('gcp-service-account')
+        AWS_REGION = 'us-east-1'
+        AWS_ACCOUNT_ID = credentials('aws-account-id')
+        ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     }
     
     stages {
@@ -355,30 +366,30 @@ Navigate to **Manage Jenkins → Manage Credentials → System → Global creden
 
 Add the following credentials:
 
-1. **GCP Project ID**
+1. **AWS Access Key ID**
    - Type: Secret text
-   - ID: `gcp-project-id`
-   - Secret: Your GCP project ID
+   - ID: `aws-access-key-id`
+   - Secret: Your AWS Access Key ID
 
-2. **GKE Cluster Name**
+2. **AWS Secret Access Key**
    - Type: Secret text
-   - ID: `gke-cluster-name`
-   - Secret: Your GKE cluster name
+   - ID: `aws-secret-access-key`
+   - Secret: Your AWS Secret Access Key
 
-3. **GKE Zone**
+3. **AWS Account ID**
    - Type: Secret text
-   - ID: `gke-zone`
-   - Secret: Your GKE zone (e.g., `us-central1-a`)
+   - ID: `aws-account-id`
+   - Secret: Your AWS Account ID
 
-4. **GCP Docker Registry URL**
+4. **EKS Cluster Name**
    - Type: Secret text
-   - ID: `gcp-docker-registry-url`
-   - Secret: `gcr.io`
+   - ID: `eks-cluster-name`
+   - Secret: Your EKS cluster name (e.g., `aws-info-website-dev`)
 
-5. **GCP Service Account JSON**
-   - Type: Secret file
-   - ID: `gcp-service-account`
-   - File: Upload `terraform-key.json`
+5. **ECR Registry URL**
+   - Type: Secret text
+   - ID: `ecr-registry-url`
+   - Secret: `<account-id>.dkr.ecr.us-east-1.amazonaws.com`
 
 ### Jenkins Job Setup Steps
 
@@ -468,13 +479,14 @@ sudo apt-get install -y \
     git \
     npm \
     python3 \
-    jq
+    jq \
+    awscli
 
 # Configure Docker
 sudo usermod -aG docker jenkins
 
-# Setup gcloud
-curl https://sdk.cloud.google.com | bash
+# Configure AWS CLI
+aws configure
 ```
 
 #### Configure Jenkins Node Credentials
@@ -484,7 +496,8 @@ curl https://sdk.cloud.google.com | bash
 3. Add environment variables:
    ```
    DOCKER_HOST=unix:///var/run/docker.sock
-   GCP_REGION=us-central1
+   AWS_REGION=us-east-1
+   AWS_DEFAULT_REGION=us-east-1
    KUBECONFIG=/var/lib/jenkins/.kube/config
    ```
 
@@ -557,12 +570,14 @@ Verify Deployment
 
 ### Troubleshooting Jenkins Integration
 
-**Issue**: Permission Denied when pulling images
+**Issue**: Permission Denied when pulling images from ECR
 ```groovy
-// Solution: Configure Docker authentication in Jenkins
-withCredentials([file(credentialsId: 'gcp-service-account', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
-    sh 'gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS'
-    sh 'gcloud auth configure-docker gcr.io'
+// Solution: Configure AWS credentials in Jenkins
+withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
+    sh '''
+        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+    '''
 }
 ```
 
@@ -571,14 +586,15 @@ withCredentials([file(credentialsId: 'gcp-service-account', variable: 'GOOGLE_AP
 # Solution: Clear stuck locks
 terraform force-unlock <LOCK_ID>
 
-# Or use backend configuration for state locking
-terraform init -backend-config="skip_bucket_creation=true"
+# Or use DynamoDB table for proper state locking
+# Ensure dynamodb_table is configured in backend config
 ```
 
-**Issue**: GKE authentication failures
+**Issue**: EKS authentication failures
 ```bash
-# Solution: Update kubeconfig
-gcloud container clusters get-credentials <cluster-name> --zone <zone> --project <project-id>
+# Solution: Update kubeconfig with IAM role
+aws eks update-kubeconfig --name <cluster-name> --region us-east-1
+kubectl auth can-i get pods --as-group system:masters
 ```
 
 ## 📝 Configuration Files
@@ -588,25 +604,27 @@ gcloud container clusters get-credentials <cluster-name> --zone <zone> --project
 - **Contains**:
   - Required Terraform version (>= 1.0)
   - Provider version constraints
-  - Provider configurations
-  - Default labels
+  - AWS provider configuration
+  - S3 backend configuration for state management
+  - Default tags for all resources
 
 ### variables.tf
 - **Purpose**: Input variable definitions
 - **Contains**:
-  - GCP configuration (project_id, region, credentials)
+  - AWS configuration (region)
   - Kubernetes configuration (cluster_name, namespace)
   - Helm configuration (chart path, release name, timeout)
   - Image tags for mainwebsite and metrics services
+  - S3 state backend configuration
   - Validation rules for all inputs
 
 ### outputs.tf
 - **Purpose**: Output values for reference
 - **Contains**:
-  - GCP and cluster information
+  - AWS and EKS cluster information
   - Helm release details
   - Environment information
-  - Helpful kubectl/helm commands
+  - Helpful kubectl/helm/AWS commands
 
 ### locals.tf
 - **Purpose**: Local computed values
@@ -623,14 +641,16 @@ gcloud container clusters get-credentials <cluster-name> --zone <zone> --project
   - `dev.tfvars` - Development configuration
   - `staging.tfvars` - Staging configuration
   - `production.tfvars` - Production configuration
+- **Backend Files**:
+  - `backend-dev.tfvars` - S3 backend config for dev
+  - `backend-staging.tfvars` - S3 backend config for staging
+  - `backend-production.tfvars` - S3 backend config for production
 
 ## 🔧 Variables
 
 ### Required Variables
-- `project_id` - GCP project ID
-- `region` - GCP region
-- `credentials_file` - Path to service account JSON
-- `cluster_name` - GKE cluster name
+- `region` - AWS region
+- `cluster_name` - EKS cluster name
 - `environment` - Environment type (dev, staging, production)
 
 ### Optional Variables with Defaults
@@ -641,45 +661,53 @@ gcloud container clusters get-credentials <cluster-name> --zone <zone> --project
 - `helm_atomic_deployment` (default: true)
 - `mainwebsite_image_tag` (default: "latest")
 - `metrics_image_tag` (default: "latest")
+- `terraform_state_bucket` - S3 bucket for Terraform state
+- `terraform_state_key` (default: "aws-info-website/terraform")
 
 ### Variable Validation
 All variables include validation rules:
 - Format validation (regex patterns)
 - Type checking
 - Range validation for numeric values
-- File existence checks
+- File existence checks (where applicable)
 
 ## 📊 Environment Differences
 
 | Aspect | Dev | Staging | Production |
 |--------|-----|---------|------------|
 | Namespace | development | staging | production |
-| Cluster | gcp-info-website-dev | gcp-info-website-staging | gcp-info-website-prod |
+| Cluster | aws-info-website-dev | aws-info-website-staging | aws-info-website-prod |
 | Mainwebsite Replicas | 1 | 2 | 3 |
 | Metrics Replicas | 1 | 1 | 2 |
 | Autoscaling | Disabled | Enabled (max 4) | Enabled (max 10) |
 | Image Tags | dev-latest | staging-latest | 1.0.0 (explicit) |
 | Monitoring | Disabled | Enabled | Enabled |
+| Region | us-east-1 | us-east-1 | us-east-1 |
+| State Backend | S3 with versioning | S3 with versioning | S3 with versioning + DynamoDB locks |
 
 ## 🔐 Security Best Practices
 
 ### Credentials Management
-1. ✅ Store credentials in `.gitignore`
-2. ✅ Use service account JSON for GCP auth
-3. ✅ Mark credentials_file as `sensitive = true`
-4. ✅ Never commit credentials to version control
+1. ✅ Store AWS credentials in `~/.aws/credentials` or environment variables
+2. ✅ Use AWS IAM roles for EC2 instances and Lambda functions
+3. ✅ Never commit AWS keys or credentials to version control
+4. ✅ Rotate AWS access keys regularly
+5. ✅ Use short-lived credentials when possible
 
 ### State Management
-1. ✅ Use remote state (GCS backend recommended)
-2. ✅ Enable state encryption
-3. ✅ Restrict state file access via IAM
-4. ✅ Enable state locking for team environments
+1. ✅ Use S3 backend for remote state (mandatory for team environments)
+2. ✅ Enable S3 versioning on state buckets
+3. ✅ Enable server-side encryption (AES256 or KMS)
+4. ✅ Use DynamoDB table for state locking
+5. ✅ Block public access to S3 state buckets
+6. ✅ Enable S3 access logging
 
 ### Environment Isolation
-1. ✅ Separate tfvars files per environment
-2. ✅ Different GKE clusters per environment
+1. ✅ Separate S3 buckets per environment (dev, staging, prod)
+2. ✅ Different EKS clusters per environment
 3. ✅ Different namespaces per environment
-4. ✅ Distinct IAM roles per environment
+4. ✅ Distinct IAM roles/policies per environment
+5. ✅ Use separate AWS accounts for production (recommended)
 
 ## 📋 Common Commands
 
@@ -753,11 +781,14 @@ terraform show -json tfplan.json | jq
 
 ### Common Issues
 
-**Issue**: "Error: error reading the TLS CA Certificate"
+**Issue**: "Error: InvalidAction. The action ListClusters is not valid for this web service"
 ```bash
-# Solution: Verify cluster is accessible
-gcloud container clusters get-credentials <cluster-name> --region <region>
-kubectl cluster-info
+# Solution: Verify AWS credentials and permissions
+aws sts get-caller-identity
+aws eks list-clusters
+
+# Ensure you have EKS permissions
+aws iam get-user-policy --user-name <your-username> --policy-name <policy-name>
 ```
 
 **Issue**: "Error: resource type kubernetes_namespace not available"
@@ -773,6 +804,20 @@ helm lint ../helm-dir/
 helm template mainwebsite ../helm-dir/
 ```
 
+**Issue**: "Error: error reading the TLS CA Certificate"
+```bash
+# Solution: Verify EKS cluster is accessible
+aws eks describe-cluster --name <cluster-name> --region us-east-1
+aws eks update-kubeconfig --name <cluster-name> --region us-east-1
+kubectl cluster-info
+```
+
+**Issue**: "DynamoDB: User is not authorized to perform: dynamodb:DescribeTable"
+```bash
+# Solution: Ensure IAM user/role has DynamoDB permissions for state locking
+# Either disable DynamoDB locking or grant permissions
+```
+
 ### Debugging
 ```bash
 # Enable debug logging
@@ -780,18 +825,24 @@ export TF_LOG=DEBUG
 terraform apply -var-file="environments/dev.tfvars"
 unset TF_LOG
 
-# Check provider logs
+# Check provider versions
 terraform providers
 terraform version
+
+# Validate AWS access
+aws s3 ls
+aws eks list-clusters
 ```
 
 ## 📚 Additional Resources
 
 ### Documentation
-- [Terraform GCP Provider](https://registry.terraform.io/providers/hashicorp/google/latest/docs)
+- [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
 - [Terraform Kubernetes Provider](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs)
 - [Terraform Helm Provider](https://registry.terraform.io/providers/hashicorp/helm/latest/docs)
-- [GKE Documentation](https://cloud.google.com/kubernetes-engine/docs)
+- [AWS EKS Documentation](https://docs.aws.amazon.com/eks/)
+- [AWS S3 Documentation](https://docs.aws.amazon.com/s3/)
+- [AWS DynamoDB Documentation](https://docs.aws.amazon.com/dynamodb/)
 
 ### Best Practices
 - See [BEST_PRACTICES.md](BEST_PRACTICES.md)

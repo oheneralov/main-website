@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
-import { CaptchaService } from './captcha.service';
 import { LoggingService } from './logging.service';
 import { ContactService } from './contact/contact.service';
 import { AuthController } from './auth.controller';
@@ -22,6 +21,6 @@ import { Contact } from './entities/contact.entity';
     TypeOrmModule.forFeature([Contact]),
   ],
   controllers: [AppController, AuthController],
-  providers: [CaptchaService, LoggingService, ContactService],
+  providers: [LoggingService, ContactService],
 })
 export class AppModule {}

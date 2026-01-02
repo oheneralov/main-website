@@ -2,12 +2,10 @@
 # Usage: terraform apply -var-file="environments/production.tfvars"
 # IMPORTANT: Treat this file as sensitive - consider using remote state or Terraform Cloud
 
-project_id            = "clever-spirit-417020"
-region                = "us-central1"
+region                = "us-east-1"
 environment           = "production"
-cluster_name          = "gcp-info-website-prod"
+cluster_name          = "aws-info-website-prod"
 kubernetes_namespace  = "production"
-credentials_file      = "./clever-spirit-terraform-service-account.json"
 
 helm_chart_path       = "../helm-dir"
 helm_release_name     = "mainwebsite"
@@ -32,7 +30,10 @@ helm_set_values = {
 common_labels = {
   environment = "production"
   managed_by  = "terraform"
-  project     = "gcp-info-website"
+  project     = "aws-info-website"
   team        = "platform"
   sla         = "high"
 }
+
+terraform_state_bucket = "tf-state-prod-your-account-id"
+terraform_state_key    = "aws-info-website/terraform/production"

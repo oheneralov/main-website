@@ -1,38 +1,32 @@
 ################################################################################
-# GCP & Kubernetes Cluster Outputs
+# AWS & Kubernetes Cluster Outputs
 ################################################################################
 
-output "gcp_project_id" {
-  description = "The GCP project ID"
-  value       = var.project_id
-}
-
-output "gcp_region" {
-  description = "The GCP region"
+output "aws_region" {
+  description = "The AWS region"
   value       = var.region
 }
 
-output "gke_cluster_name" {
-  description = "Name of the GKE cluster"
-  value       = data.google_container_cluster.gke.name
+output "eks_cluster_name" {
+  description = "Name of the EKS cluster"
+  value       = data.aws_eks_cluster.cluster.name
 }
 
-output "gke_cluster_endpoint" {
-  description = "GKE cluster endpoint (Kubernetes API server address)"
-  value       = data.google_container_cluster.gke.endpoint
+output "eks_cluster_endpoint" {
+  description = "EKS cluster endpoint (Kubernetes API server address)"
+  value       = data.aws_eks_cluster.cluster.endpoint
   sensitive   = true
 }
 
-output "gke_cluster_ca_certificate" {
-  description = "GKE cluster CA certificate (for kubectl configuration)"
-  value       = data.google_container_cluster.gke.master_auth[0].cluster_ca_certificate
+output "eks_cluster_ca_certificate" {
+  description = "EKS cluster CA certificate (for kubectl configuration)"
+  value       = data.aws_eks_cluster.cluster.certificate_authority[0].data
   sensitive   = true
 }
 
-output "kubernetes_cluster_host" {
-  description = "Kubernetes cluster host for provider configuration"
-  value       = "https://${data.google_container_cluster.gke.endpoint}"
-  sensitive   = true
+output "eks_cluster_arn" {
+  description = "The Amazon Resource Name (ARN) of the EKS cluster"
+  value       = data.aws_eks_cluster.cluster.arn
 }
 
 ################################################################################
@@ -89,7 +83,7 @@ output "metrics_image_tag" {
 
 output "kubectl_configure_command" {
   description = "Command to configure kubectl context"
-  value       = "gcloud container clusters get-credentials ${data.google_container_cluster.gke.name} --region=${var.region} --project=${var.project_id}"
+  value       = "aws eks update-kubeconfig --name ${data.aws_eks_cluster.cluster.name} --region ${var.region}"
 }
 
 output "helm_list_command" {
