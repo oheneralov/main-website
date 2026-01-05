@@ -50,6 +50,19 @@ helm_set_values = {
   "mainwebsite.autoscaling.maxReplicas" = "4"
 }
 
+# S3 Configuration
+s3_bucket_name        = "aws-info-website-staging-data"
+s3_versioning_enabled = true
+
+# RDS MySQL Configuration
+rds_instance_class            = "db.t3.small"
+rds_database_name             = "appdb"
+rds_master_username           = "dbadmin"
+rds_allocated_storage         = 30
+rds_num_read_replicas         = 1
+rds_backup_retention_period   = 14
+rds_engine_version            = "8.0.35"
+
 # State Management
 terraform_state_bucket        = "your-terraform-state-bucket-staging"
 terraform_state_key           = "aws-info-website/staging/terraform.tfstate"

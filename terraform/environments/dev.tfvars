@@ -49,6 +49,19 @@ helm_set_values = {
   "metrics.replicaCount"     = "1"
 }
 
+# S3 Configuration
+s3_bucket_name        = "aws-info-website-dev-data"
+s3_versioning_enabled = true
+
+# RDS MySQL Configuration
+rds_instance_class            = "db.t3.micro"
+rds_database_name             = "appdb"
+rds_master_username           = "dbadmin"
+rds_allocated_storage         = 20
+rds_num_read_replicas         = 0
+rds_backup_retention_period   = 7
+rds_engine_version            = "8.0.35"
+
 # State Management
 terraform_state_bucket        = "your-terraform-state-bucket-dev"
 terraform_state_key           = "aws-info-website/dev/terraform.tfstate"
