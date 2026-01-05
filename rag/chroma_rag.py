@@ -11,6 +11,7 @@ import logging
 import chromadb
 from chromadb.config import Settings
 from chromadb.utils import embedding_functions
+from langchain.text_splitter import MarkdownTextSplitter
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -125,8 +126,12 @@ class ChromaRAG:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             
-            # Split content into chunks
-            chunks = self._chunk_text(content, chunk_size, chunk_overlap)
+            # Split content into chunks using MarkdownTextSplitter
+            splitter = MarkdownTextSplitter(
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap
+            )
+            chunks = splitter.split_text(content)
             
             # Create metadata for each chunk
             chunk_metadata = []
@@ -248,18 +253,6 @@ class ChromaRAG:
         except Exception as e:
             logger.error(f"Error getting collection stats: {e}")
             raise
-    
-    def _chunk_text(self, text: str, chunk_size: int, chunk_overlap: int) -> List[str]:
-        """Split text into overlapping chunks."""
-        chunks = []
-        start = 0
-        
-        while start < len(text):
-            end = min(start + chunk_size, len(text))
-            chunks.append(text[start:end])
-            start = end - chunk_overlap if end < len(text) else len(text)
-        
-        return chunks
     
     def persist(self) -> None:
         """Persist the database to disk."""
