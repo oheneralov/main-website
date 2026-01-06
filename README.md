@@ -142,6 +142,155 @@ Jenkins pipelines automate build, validation, and deployment:
 - `Jenkinsfile.validate`: Code validation and testing
 - `Jenkinsfile.deploy`: Production deployment
 
+## 🔧 AWS CI/CD Deployment (CodePipeline, CodeBuild, CodeDeploy)
+
+This project can be deployed to AWS using CodePipeline, CodeBuild, and CodeDeploy for automated continuous integration and deployment.
+
+### Prerequisites
+- AWS account with appropriate IAM permissions
+- CodePipeline, CodeBuild, and CodeDeploy services enabled
+- GitHub repository connected to CodePipeline
+- Amazon ECR repository for storing Docker images
+- EC2 instances or ECS cluster for deployment targets
+- CodeDeploy agent installed on EC2 instances (for EC2 deployments)
+
+### AWS Services Overview
+
+**CodePipeline**: Orchestrates the entire CI/CD workflow
+- Monitors source code repository for changes
+- Triggers CodeBuild for compilation and testing
+- Deploys using CodeDeploy
+
+**CodeBuild**: Builds, tests, and packages the application
+- Compiles TypeScript/React code
+- Runs unit and E2E tests
+- Builds Docker images
+- Pushes images to ECR
+
+**CodeDeploy**: Automates application deployment
+- Deploys to EC2 instances, on-premises servers, or auto-scaling groups
+- Manages traffic shifting and health checks
+- Supports rollback capabilities
+
+### Setup Instructions
+
+#### 1. Create CodePipeline
+
+```bash
+# Create an S3 bucket for pipeline artifacts
+aws s3 mb s3://aws-info-website-pipeline-artifacts
+
+# Create IAM role for CodePipeline
+aws iam create-role --role-name CodePipelineServiceRole \
+  --assume-role-policy-document file://trust-policy.json
+
+# Attach required policies
+aws iam attach-role-policy --role-name CodePipelineServiceRole \
+  --policy-arn arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
+```
+
+#### 2. Create CodeBuild Project
+
+Use the `buildspec.yml` file from [aws-ci-cd-config/buildspec.yml](aws-ci-cd-config/buildspec.yml). Place it in the project root or specify its location in CodeBuild project settings.
+
+Create CodeBuild project via AWS CLI:
+
+```bash
+aws codebuild create-project \
+  --name aws-info-website-build \
+  --source type=GITHUB,location=https://github.com/your-org/aws-info-website \
+  --artifacts type=S3,location=aws-info-website-pipeline-artifacts \
+  --environment type=LINUX_CONTAINER,image=aws/codebuild/standard:7.0,computeType=BUILD_GENERAL1_LARGE,environmentVariables='[{"name":"AWS_DEFAULT_REGION","value":"us-east-1"},{"name":"AWS_ACCOUNT_ID","value":"123456789012"}]' \
+  --service-role arn:aws:iam::123456789012:role/CodeBuildServiceRole
+```
+
+#### 3. Create CodeDeploy Application
+
+```bash
+# Create CodeDeploy application
+aws deploy create-app --application-name aws-info-website
+
+# Create deployment group for EC2 instances
+aws deploy create-deployment-group \
+  --application-name aws-info-website \
+  --deployment-group-name aws-info-website-deployment \
+  --service-role-arn arn:aws:iam::123456789012:role/CodeDeployServiceRole \
+  --deployment-config-name CodeDeployDefault.OneAtATime \
+  --ec2-tag-filters Key=Environment,Value=production,Type=KEY_AND_VALUE
+```
+
+Use `appspec-ec2.yml` from [aws-ci-cd-config/appspec-ec2.yml](aws-ci-cd-config/appspec-ec2.yml). Rename it to `appspec.yml` and place in project root for EC2 deployment.
+
+#### 4. Create CodePipeline
+
+Use the `pipeline.json` file from [aws-ci-cd-config/pipeline.json](aws-ci-cd-config/pipeline.json):
+
+```bash
+aws codepipeline create-pipeline \
+  --cli-input-json file://aws-ci-cd-config/pipeline.json
+```
+
+Update the following in `pipeline.json` before using:
+- AWS Account ID (replace `123456789012`)
+- GitHub organization and token
+- AWS region
+
+### ECS Deployment (Alternative)
+
+For ECS deployment with CodeDeploy:
+
+```bash
+aws deploy create-deployment-group \
+  --application-name aws-info-website \
+  --deployment-group-name aws-info-website-ecs \
+  --service-role-arn arn:aws:iam::123456789012:role/CodeDeployServiceRole \
+  --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
+  --deployment-style deploymentType=BLUE_GREEN,deploymentOption=WITH_TRAFFIC_CONTROL
+```
+
+Use `appspec-ecs.yml` from [aws-ci-cd-config/appspec-ecs.yml](aws-ci-cd-config/appspec-ecs.yml). Rename it to `appspec.yml` and place in project root. Update the following:
+- Task definition name and version
+- Container name and port
+- Subnet IDs
+- Security group IDs
+
+### Monitoring and Troubleshooting
+
+Monitor pipeline execution:
+```bash
+# Get pipeline status
+aws codepipeline get-pipeline-state --name aws-info-website-pipeline
+
+# Get build logs
+aws codebuild batch-get-builds --ids <build-id>
+
+# Get deployment status
+aws deploy get-deployment --deployment-id <deployment-id>
+```
+
+View logs in CloudWatch:
+- CodeBuild logs: `/aws/codebuild/aws-info-website-build`
+- CodeDeploy logs: `/aws/codedeploy/aws-info-website`
+
+### Environment-Specific Deployments
+
+For staging and production:
+
+```bash
+# Create separate deployment groups
+aws deploy create-deployment-group \
+  --application-name aws-info-website \
+  --deployment-group-name aws-info-website-staging \
+  --service-role-arn arn:aws:iam::123456789012:role/CodeDeployServiceRole \
+  --ec2-tag-filters Key=Environment,Value=staging,Type=KEY_AND_VALUE
+
+aws deploy create-deployment-group \
+  --application-name aws-info-website \
+  --deployment-group-name aws-info-website-production \
+  --service-role-arn arn:aws:iam::123456789012:role/CodeDeployServiceRole \
+  --ec2-tag-filters Key=Environment,Value=production,Type=KEY_AND_VALUE
+```
+
 ## 🛠️ Development
 
 ### Backend Development

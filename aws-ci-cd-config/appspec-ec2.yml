@@ -1,0 +1,44 @@
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::EC2::Instance
+      Properties:
+        Filters:
+          - Key: tag:Environment
+            Value: production
+Hooks:
+  - BeforeBlockTraffic: "before_block.sh"
+  - AfterBlockTraffic: "after_block.sh"
+  - BeforeAllowTraffic: "before_allow.sh"
+  - AfterAllowTraffic: "after_allow.sh"
+
+Files:
+  - source: /
+    destination: /opt/aws-info-website
+
+Permissions:
+  - object: /
+    pattern: "**"
+    owner: ec2-user
+    group: ec2-user
+    mode: 755
+    type:
+      - directory
+  - object: /
+    pattern: "**"
+    owner: ec2-user
+    group: ec2-user
+    mode: 644
+    type:
+      - file
+
+Scripts:
+  - Location: scripts/stop_server.sh
+    Timeout: 300
+    RunAs: root
+  - Location: scripts/install_dependencies.sh
+    Timeout: 600
+    RunAs: root
+  - Location: scripts/start_server.sh
+    Timeout: 300
+    RunAs: root

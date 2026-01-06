@@ -1,0 +1,21 @@
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: "aws-info-website-task-def:1"
+        LoadBalancerInfo:
+          ContainerName: "mainwebsite"
+          ContainerPort: 3000
+        PlatformVersion: "1.4.0"
+        NetworkConfiguration:
+          AwsvpcConfiguration:
+            Subnets:
+              - "subnet-12345678"
+            SecurityGroups:
+              - "sg-12345678"
+            AssignPublicIp: "ENABLED"
+
+Hooks:
+  - BeforeAllowTraffic: "beforeAllowTraffic.sh"
+  - AfterAllowTraffic: "afterAllowTraffic.sh"
