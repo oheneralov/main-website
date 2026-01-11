@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, List
 
 import torch
@@ -71,6 +72,7 @@ class FinetuneComponents:
             "up_proj",
             "down_proj",
         ]
+        logging.info("Using LoRA r=%s", self.cfg.lora_r)
         lora_cfg = LoraConfig(
             r=self.cfg.lora_r,
             lora_alpha=self.cfg.lora_alpha,

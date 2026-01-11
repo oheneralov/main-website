@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import List
+from pathlib import Path
 
 import torch
 from dotenv import load_dotenv
@@ -17,6 +18,10 @@ MAX_NEW_TOKENS = 128
 
 def load_adapter_model(base_model_id: str = BASE_MODEL_ID, adapter_dir: str = ADAPTER_DIR):
     """Load base model and attach the trained LoRA adapter."""
+    adapter_path = Path(adapter_dir)
+    if not adapter_path.exists():
+        raise FileNotFoundError(f"Adapter dir not found: {adapter_path}")
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
 
@@ -37,25 +42,28 @@ def load_adapter_model(base_model_id: str = BASE_MODEL_ID, adapter_dir: str = AD
 
     logging.info("Attaching LoRA adapters from %s", adapter_dir)
     model = PeftModel.from_pretrained(base_model, adapter_dir)
+    # Quick sanity: ensure LoRA params are active
+    model.print_trainable_parameters()
     model.eval()
     return model, tokenizer, device
 
 
 def generate_responses(model, tokenizer, device: str, prompts: List[str]):
     for idx, prompt in enumerate(prompts, start=1):
-        messages = [{"role": "user", "content": prompt}]
-        inputs = tokenizer.apply_chat_template(
-            messages,
-            tokenize=True,
-            add_generation_prompt=True,
+        # Match the training prompt pattern: "Instruction... Input... Response..."
+        formatted = f"Instruction: {prompt}\nInput: \nResponse: "
+        enc = tokenizer(
+            formatted,
             return_tensors="pt",
+            padding=False,
+            truncation=True,
+            max_length=tokenizer.model_max_length,
         ).to(device)
-
-        input_len = inputs.shape[1]
+        input_len = enc.input_ids.shape[1]
 
         with torch.no_grad():
             outputs = model.generate(
-                inputs,
+                **enc,
                 max_new_tokens=MAX_NEW_TOKENS,
                 do_sample=True,
                 temperature=0.7,
@@ -65,15 +73,15 @@ def generate_responses(model, tokenizer, device: str, prompts: List[str]):
             )
 
         generated = outputs[0, input_len:]
-        decoded = tokenizer.decode(generated, skip_special_tokens=True)
+        decoded = tokenizer.decode(generated, skip_special_tokens=True).strip()
         logging.info("\n[Prompt %d]\n%s\n\n[Response]\n%s\n", idx, prompt, decoded)
 
 
 def main():
     prompts = [
         "What is LoRA fine-tuning?",
-        "Explain LoRA like I'm five.",
-        "Give two examples where LoRA is useful.",]
+        "Define LoRA in simple terms.",
+        ]
     model, tokenizer, device = load_adapter_model()
     generate_responses(model, tokenizer, device, prompts)
 

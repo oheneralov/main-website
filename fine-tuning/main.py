@@ -26,7 +26,11 @@ def train(cfg: FinetuneConfig):
 		torch_dtype=torch.float32,
 		low_cpu_mem_usage=False,
 		trust_remote_code=True,
+		attn_implementation="eager",
 	)
+
+	# Disable sliding window attention on sdpa backend to avoid unexpected behavior on CPU.
+	model.config.sliding_window = None
 
 	model = components.attach_lora(model)
 	model.config.use_cache = False
@@ -47,7 +51,6 @@ def train(cfg: FinetuneConfig):
 		warmup_ratio=cfg.warmup_ratio,
 		weight_decay=cfg.weight_decay,
 		num_train_epochs=cfg.num_train_epochs,
-		max_steps=4,
 		lr_scheduler_type="cosine",
 		logging_steps=10,
 		save_strategy="epoch",
@@ -67,10 +70,11 @@ def train(cfg: FinetuneConfig):
 		args=args,
 		train_dataset=dataset,
 		data_collator=collator,
-		tokenizer=tokenizer,
+		processing_class=tokenizer,
 	)
 
 	logging.info("Starting training")
+	logging.info("num_train_epochs=%s", cfg.num_train_epochs)
 	trainer.train()
 	logging.info("Saving final adapter")
 	trainer.model.save_pretrained(cfg.output_dir)
