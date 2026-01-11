@@ -1,0 +1,4 @@
+{"instruction": "What is LoRA fine-tuning?", "input": "", "output": "LoRA fine-tuning keeps the original model frozen and learns small low-rank adapter weights, so you adapt the model with far fewer parameters and memory."}
+{"instruction": "Explain LoRA like I'm five.", "input": "", "output": "Imagine a big robot brain. Instead of rebuilding the whole thing to teach it new tricks, we snap on tiny helper pieces that show it what to do. Those helpers are LoRA adapters."}
+{"instruction": "Give two examples where LoRA is useful.", "input": "", "output": "LoRA works well for customizing a chatbot to a company knowledge base and for adapting a model to a specific writing style without retraining the full model."}
+{"instruction": "Write a polite decline for a meeting invite.", "input": "", "output": "Thanks for thinking of me. I have a conflict at that time, but I appreciate the invite and hope we can connect on a future meeting."}

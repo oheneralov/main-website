@@ -1,0 +1,77 @@
+# LoRA Fine-Tuning Notes
+
+This repo runs a small LoRA fine-tune for Qwen 0.5B Chat using the Alpaca-cleaned dataset. The flow and key settings live in [main.py](main.py).
+
+## Flow at a Glance
+- Config defaults in [main.py#L20-L35](main.py#L20-L35) control model choice, LoRA hyperparameters, and training knobs.
+- Tokenizer build and padding setup: [main.py#L38-L44](main.py#L38-L44).
+- Dataset formatting and tokenization: [main.py#L46-L79](main.py#L46-L79).
+- LoRA adapter creation: [main.py#L81-L99](main.py#L81-L99).
+- Model load + training loop: [main.py#L102-L159](main.py#L102-L159).
+
+## LoraConfig (PEFT)
+Defined in [main.py#L81-L99](main.py#L81-L99).
+
+- `r` (`cfg.lora_r=8`): rank of the low-rank adapters; higher increases capacity and memory.
+- `lora_alpha` (`cfg.lora_alpha=16`): scaling factor for the LoRA update; acts like an intrinsic learning-rate multiplier for the adapters.
+- `lora_dropout` (`cfg.lora_dropout=0.05`): dropout applied on the LoRA branch to regularize.
+- `bias="none"`: do not adapt biases (keeps bias params frozen).
+- `task_type="CAUSAL_LM"`: configures shapes/projections for causal language modeling.
+- `target_modules`: projections that receive LoRA layers (`q/k/v/o/gate/up/down` projections in the Qwen MLP/attention stack).
+
+## AutoModelForCausalLM.from_pretrained
+Called in [main.py#L105-L111](main.py#L105-L111) to load the base Qwen chat model.
+
+- `cfg.model_id`: model repo to pull weights/tokenizer from (defaults to `Qwen/Qwen1.5-0.5B-Chat`).
+- `torch_dtype=torch.float32`: force full precision; keeps CPU-friendly but higher memory.
+- `low_cpu_mem_usage=False`: loads with standard memory pattern (set True to chunk-load on CPU if memory bound).
+- `trust_remote_code=True`: allow model repo custom code; required for some Qwen implementations.
+
+## TrainingArguments
+Set in [main.py#L124-L144](main.py#L124-L144) and passed into the Trainer.
+
+- `output_dir`: where checkpoints/adapters are written (`./qwen05-finetuned-lora8`).
+- `per_device_train_batch_size`: micro batch size on the device (`2`).
+- `gradient_accumulation_steps`: steps to accumulate gradients (`4`) → effective batch `2*4=8` sequences per update.
+- `learning_rate`: base LR for AdamW (`2e-4`).
+- `warmup_ratio`: fraction of steps for linear warmup (`0.03`).
+- `weight_decay`: L2 weight decay (`0.0` here to leave weights untouched).
+- `num_train_epochs`: planned epochs (`2`), but `max_steps=4` caps training to 4 steps for a quick smoke test.
+- `lr_scheduler_type="cosine"`: cosine decay after warmup.
+- `logging_steps=10`: logs every 10 steps.
+- `save_strategy="epoch"`: saves at each epoch end.
+- `fp16=False`, `bf16=False`: pure FP32 run (CPU-friendly).
+- `dataloader_pin_memory=False`: avoids pinning since running on CPU.
+- `optim="adamw_torch"`: use Torch AdamW.
+- `gradient_checkpointing=False`: not using activation checkpointing.
+- `label_names=["labels"]`: label field expected by Trainer.
+- `report_to=[]`: disable built-in loggers (no WandB/TS logging).
+- `seed`: deterministic seeding (`42`).
+
+## Trainer
+Instantiated in [main.py#L146-L152](main.py#L146-L152).
+
+- `model`: base model with attached LoRA adapters.
+- `args`: the `TrainingArguments` above.
+- `train_dataset`: tokenized Alpaca-cleaned training split.
+- `data_collator`: `DataCollatorForLanguageModeling` with `mlm=False` for causal LM.
+- `tokenizer`: for padding and vocab alignment during batching.
+
+## Data Pipeline
+- `format_example` builds an instruction-style prompt and target text: [main.py#L46-L58](main.py#L46-L58).
+- `tokenize(...)` applies truncation/padding to `max_length` (`512`): [main.py#L61-L70](main.py#L61-L70).
+- Dataset load/map happens in [main.py#L73-L78](main.py#L73-L78).
+
+## Run
+From the repo root, run `python main.py`. The script trains for 4 steps then saves the adapter and tokenizer to `./qwen05-finetuned-lora8`.
+
+## Artifacts in qwen05-finetuned-lora8
+- [qwen05-finetuned-lora8/adapter_model.safetensors](qwen05-finetuned-lora8/adapter_model.safetensors): LoRA adapter weights to load alongside the base Qwen model.
+- [qwen05-finetuned-lora8/adapter_config.json](qwen05-finetuned-lora8/adapter_config.json): PEFT configuration (rank, alpha, dropout, target modules) needed to instantiate the adapter.
+- [qwen05-finetuned-lora8/tokenizer.json](qwen05-finetuned-lora8/tokenizer.json) and [qwen05-finetuned-lora8/tokenizer_config.json](qwen05-finetuned-lora8/tokenizer_config.json): serialized tokenizer and settings used during training.
+- [qwen05-finetuned-lora8/merges.txt](qwen05-finetuned-lora8/merges.txt) and [qwen05-finetuned-lora8/vocab.json](qwen05-finetuned-lora8/vocab.json): BPE merges and vocabulary for the tokenizer.
+- [qwen05-finetuned-lora8/added_tokens.json](qwen05-finetuned-lora8/added_tokens.json) and [qwen05-finetuned-lora8/special_tokens_map.json](qwen05-finetuned-lora8/special_tokens_map.json): any extra tokens and the mapping of special tokens (pad, bos, eos, unk).
+- [qwen05-finetuned-lora8/README.md](qwen05-finetuned-lora8/README.md): model card template for the exported adapter; fill before sharing.
+- [qwen05-finetuned-lora8/checkpoint-4/](qwen05-finetuned-lora8/checkpoint-4/): last saved training checkpoint; mirrors the files above plus trainer state ([optimizer.pt](qwen05-finetuned-lora8/checkpoint-4/optimizer.pt), [scheduler.pt](qwen05-finetuned-lora8/checkpoint-4/scheduler.pt), [rng_state.pth](qwen05-finetuned-lora8/checkpoint-4/rng_state.pth), [trainer_state.json](qwen05-finetuned-lora8/checkpoint-4/trainer_state.json)) so you can resume or inspect training.
+
+
