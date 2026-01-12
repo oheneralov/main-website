@@ -106,6 +106,19 @@ cd terraform
 terraform init
 ```
 
+Use the backend override file to point Terraform state to the correct S3/DynamoDB backend for your environment:
+
+```bash
+# Development
+terraform init -backend-config="environments/backend-dev.tfvars"
+
+# Staging
+terraform init -backend-config="environments/backend-staging.tfvars"
+
+# Production
+terraform init -backend-config="environments/backend-production.tfvars"
+```
+
 This command:
 - Downloads required Terraform providers (aws, kubernetes, helm)
 - Initializes the backend for state storage
@@ -125,6 +138,7 @@ cat environments/dev.tfvars
 ```
 
 ### 3. Plan Deployment
+aws dynamodb create-table --table-name terraform-locks --attribute-definitions AttributeName=LockID,AttributeType=S --key-schema AttributeName=LockID,KeyType=HASH --billing-mode PAY_PER_REQUEST --region us-east-1
 
 ```bash
 # Generate an execution plan
@@ -185,7 +199,7 @@ terraform/
 │   └── backend-production.tfvars       # S3 backend config for production
 │
 ├── modules/                            # Reusable Terraform modules
-│   └── gke-deployment/                 # GKE deployment module (extensible for future use)
+
 │
 ├── Documentation Files:
 ├── INDEX.md                            # Navigation guide for documentation

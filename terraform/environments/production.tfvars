@@ -51,15 +51,6 @@ metrics_image_tag             = "1.0.0"
 s3_bucket_name        = "aws-info-website-production-data"
 s3_versioning_enabled = true
 
-# RDS MySQL Configuration
-rds_instance_class            = "db.t3.small"
-rds_database_name             = "appdb"
-rds_master_username           = "dbadmin"
-rds_allocated_storage         = 50
-rds_num_read_replicas         = 3
-rds_backup_retention_period   = 30
-rds_engine_version            = "8.0.35"
-
 helm_set_values = {
   "mainwebsite.replicaCount"               = "3"
   "metrics.replicaCount"                   = "2"

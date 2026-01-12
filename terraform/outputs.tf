@@ -65,30 +65,6 @@ output "eks_node_role_arn" {
 }
 
 ################################################################################
-# Helm Release Outputs
-################################################################################
-
-output "helm_release_name" {
-  description = "Name of the deployed Helm release"
-  value       = helm_release.mainwebsite.name
-}
-
-output "helm_release_namespace" {
-  description = "Kubernetes namespace of the Helm release"
-  value       = helm_release.mainwebsite.namespace
-}
-
-output "helm_release_status" {
-  description = "Status of the Helm release"
-  value       = helm_release.mainwebsite.status
-}
-
-output "helm_release_version" {
-  description = "Version of the deployed Helm chart"
-  value       = helm_release.mainwebsite.version
-}
-
-################################################################################
 # Application Deployment Information
 ################################################################################
 
@@ -135,16 +111,3 @@ output "kubectl_logs_command" {
   description = "Command to view application logs"
   value       = "kubectl logs -n ${var.kubernetes_namespace} -l app.kubernetes.io/instance=${helm_release.mainwebsite.name}"
 }
-
-################################################################################
-# Debug Information (comment out for production)
-################################################################################
-
-# output "gcp_client_config" {
-#   description = "Google Cloud client configuration (for debugging)"
-#   value = {
-#     project = data.google_client_config.default.project
-#     region  = data.google_client_config.default.region
-#     zone    = data.google_client_config.default.zone
-#   }
-# }

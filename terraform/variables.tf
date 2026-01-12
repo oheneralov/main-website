@@ -184,55 +184,6 @@ variable "kubernetes_namespace" {
 }
 
 ################################################################################
-# Helm Chart Configuration
-################################################################################
-
-variable "helm_chart_path" {
-  description = "Path to the Helm chart directory (relative or absolute)"
-  type        = string
-  default     = "../helm-dir"
-  nullable    = false
-}
-
-variable "helm_release_name" {
-  description = "Name of the Helm release"
-  type        = string
-  default     = "mainwebsite"
-  nullable    = false
-
-  validation {
-    condition     = can(regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", var.helm_release_name))
-    error_message = "Helm release name must be a valid Kubernetes resource name."
-  }
-}
-
-variable "helm_timeout" {
-  description = "Timeout for Helm deployment in seconds"
-  type        = number
-  default     = 300
-  nullable    = false
-
-  validation {
-    condition     = var.helm_timeout > 0 && var.helm_timeout <= 3600
-    error_message = "Helm timeout must be between 1 and 3600 seconds."
-  }
-}
-
-variable "helm_atomic_deployment" {
-  description = "If true, helm upgrade process rolls back changes on failure"
-  type        = bool
-  default     = true
-  nullable    = false
-}
-
-variable "helm_set_values" {
-  description = "Additional Helm values to set via command line"
-  type        = map(string)
-  default     = {}
-  nullable    = false
-}
-
-################################################################################
 # Container Image Configuration
 ################################################################################
 
@@ -259,24 +210,6 @@ variable "metrics_image_tag" {
     error_message = "Image tag must not be empty."
   }
 }
-
-################################################################################
-# Optional: Remote State Configuration (uncomment to use)
-################################################################################
-
-# variable "state_bucket" {
-#   description = "GCS bucket for storing Terraform state"
-#   type        = string
-#   default     = ""
-#   nullable    = false
-# }
-
-# variable "state_encryption_key" {
-#   description = "Encryption key for state file (base64 encoded 32-byte key)"
-#   type        = string
-#   sensitive   = true
-#   default     = ""
-# }
 
 ################################################################################
 # Optional: Labels and Tags
@@ -338,101 +271,5 @@ variable "s3_versioning_enabled" {
   description = "Enable versioning on the S3 bucket"
   type        = bool
   default     = true
-  nullable    = false
-}
-
-################################################################################
-# RDS MySQL Configuration
-################################################################################
-
-variable "rds_instance_class" {
-  description = "The compute and memory capacity of the DB instance (e.g., db.t3.micro, db.t3.small)"
-  type        = string
-  default     = "db.t3.micro"
-  nullable    = false
-
-  validation {
-    condition     = can(regex("^db\\.[a-z0-9]+\\.[a-z0-9]+$", var.rds_instance_class))
-    error_message = "RDS instance class must be valid (e.g., db.t3.micro, db.t3.small)."
-  }
-}
-
-variable "rds_database_name" {
-  description = "Name of the default database to create"
-  type        = string
-  default     = "appdb"
-  nullable    = false
-
-  validation {
-    condition     = length(var.rds_database_name) > 0 && length(var.rds_database_name) <= 64
-    error_message = "RDS database name must be between 1 and 64 characters."
-  }
-}
-
-variable "rds_master_username" {
-  description = "Master username for RDS database (do not use 'admin', 'root', etc.)"
-  type        = string
-  default     = "dbadmin"
-  nullable    = false
-  sensitive   = true
-
-  validation {
-    condition     = length(var.rds_master_username) > 0 && length(var.rds_master_username) <= 41
-    error_message = "RDS master username must be between 1 and 41 characters."
-  }
-}
-
-variable "rds_master_password" {
-  description = "Master password for RDS database (must be at least 8 characters)"
-  type        = string
-  nullable    = false
-  sensitive   = true
-
-  validation {
-    condition     = length(var.rds_master_password) >= 8
-    error_message = "RDS master password must be at least 8 characters."
-  }
-}
-
-variable "rds_allocated_storage" {
-  description = "Allocated storage for RDS in GB (20-65536)"
-  type        = number
-  default     = 20
-  nullable    = false
-
-  validation {
-    condition     = var.rds_allocated_storage >= 20 && var.rds_allocated_storage <= 65536
-    error_message = "RDS allocated storage must be between 20 and 65536 GB."
-  }
-}
-
-variable "rds_num_read_replicas" {
-  description = "Number of read replicas for high availability (0-15)"
-  type        = number
-  default     = 0
-  nullable    = false
-
-  validation {
-    condition     = var.rds_num_read_replicas >= 0 && var.rds_num_read_replicas <= 15
-    error_message = "Number of read replicas must be between 0 and 15."
-  }
-}
-
-variable "rds_backup_retention_period" {
-  description = "Backup retention period in days (0-35)"
-  type        = number
-  default     = 7
-  nullable    = false
-
-  validation {
-    condition     = var.rds_backup_retention_period >= 0 && var.rds_backup_retention_period <= 35
-    error_message = "Backup retention period must be between 0 and 35 days."
-  }
-}
-
-variable "rds_engine_version" {
-  description = "MySQL engine version (e.g., 8.0.35, 5.7.44)"
-  type        = string
-  default     = "8.0.35"
   nullable    = false
 }

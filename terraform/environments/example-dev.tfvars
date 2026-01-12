@@ -2,42 +2,60 @@
 # Copy this file to environments/dev.tfvars and customize for your setup
 
 # ============================================================
-# GCP Configuration
+# AWS Configuration
 # ============================================================
 
-# Your GCP project ID
-# Get this from: gcloud config get-value project
-project_id = "clever-spirit-417020"
-
-# GCP region for GKE cluster
-# Options: us-central1, us-west1, us-east1, europe-west1, asia-east1
-region = "us-central1"
+# AWS region for EKS cluster
+# Options: us-east-1, us-west-2, eu-west-1, ap-southeast-1, etc.
+region = "us-east-1"
 
 # Environment name (dev/staging/production)
 environment = "dev"
 
-# Path to service account JSON key
-# Get this from: gcloud iam service-accounts keys create
-# IMPORTANT: Add this file to .gitignore - NEVER commit to version control
-credentials_file = "./clever-spirit-terraform-service-account.json"
-
 # ============================================================
-# GKE Cluster Configuration
+# EKS Cluster Configuration
 # ============================================================
 
-# GKE cluster name
-cluster_name = "gcp-info-website-dev"
+# Whether to create a new EKS cluster (true) or reference an existing one (false)
+create_cluster = true
 
-# Initial number of nodes in default node pool
-cluster_initial_node_count = 1
+# EKS cluster name
+cluster_name = "aws-info-website-dev"
 
-# Machine type for cluster nodes
-# Options: n1-standard-1, n1-standard-2, n1-standard-4, e2-standard-2, e2-standard-4
-cluster_machine_type = "n1-standard-1"
+# Kubernetes version
+kubernetes_version = "1.28"
 
-# Kubernetes version (omit for latest stable)
-# Get available versions: gcloud container get-server-config --region=us-central1
-cluster_kubernetes_version = "latest"
+# VPC Subnet IDs for the EKS cluster (at least 2 required)
+# Replace with your actual subnet IDs
+subnet_ids = ["subnet-xxxxxxxx", "subnet-yyyyyyyy"]
+
+# Security group IDs for the EKS cluster (optional)
+cluster_security_group_ids = []
+
+# Enable public access to the EKS cluster endpoint
+cluster_endpoint_public_access = true
+
+# CIDR blocks that can access the public EKS endpoint
+cluster_endpoint_public_access_cidrs = ["0.0.0.0/0"]
+
+# EKS cluster logging types to enable
+cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+
+# ============================================================
+# EKS Node Group Configuration
+# ============================================================
+
+# Node group scaling
+node_group_min_size = 1
+node_group_max_size = 3
+node_group_desired_size = 2
+
+# EC2 instance types for the node group
+# Options: t3.medium, t3.large, m5.large, etc.
+node_instance_types = ["t3.medium"]
+
+# Disk size in GB for each node
+node_disk_size = 50
 
 # ============================================================
 # Kubernetes Configuration
@@ -97,12 +115,32 @@ helm_set_values = {
 
   # Ingress configuration (adjust hostname for your environment)
   "ingress.enabled"                   = "true"
-  "ingress.hosts[0].host"             = "dev.gcp-info-website.local"
+  "ingress.hosts[0].host"             = "dev.aws-info-website.local"
   "ingress.tls.enabled"               = "false"
 
   # Update strategy
   "mainwebsite.strategy.type"         = "RollingUpdate"
 }
+
+# ============================================================
+# S3 Configuration
+# ============================================================
+
+# S3 bucket name for application data storage
+s3_bucket_name = "aws-info-website-dev-data"
+
+# Enable versioning on the S3 bucket
+s3_versioning_enabled = true
+
+# ============================================================
+# Terraform State Management
+# ============================================================
+
+# S3 bucket for storing Terraform state
+terraform_state_bucket = "aws-info-website-terraform-state"
+
+# S3 key path for Terraform state files
+terraform_state_key = "aws-info-website/dev/terraform.tfstate"
 
 # ============================================================
 # Labels
@@ -112,7 +150,7 @@ helm_set_values = {
 common_labels = {
   environment = "dev"
   managed_by  = "terraform"
-  project     = "gcp-info-website"
+  project     = "aws-info-website"
   team        = "platform"
 }
 
@@ -121,20 +159,23 @@ common_labels = {
 # ============================================================
 
 # Development environment guidelines:
-# - Single replica for resource efficiency
+# - 1-2 nodes for resource efficiency
 # - Minimal resource requests
 # - No autoscaling
-# - No persistent storage required
 # - Latest development images
 # - No TLS required
 # - Minimal logging level
 
 # Cost estimates for this configuration:
-# - Single n1-standard-1 node (hourly): ~$0.05
-# - Monthly estimate: ~$35 (cloud costs only, excluding storage/networking)
+# - 2x t3.medium nodes (monthly): ~$60
+# - EKS cluster (monthly): $72
+# - Total monthly estimate: ~$132 (excluding storage/networking/data transfer)
 
 # Next steps after applying this configuration:
-# 1. Run: terraform apply -var-file="environments/dev.tfvars"
-# 2. Verify deployment: kubectl get pods -n development
-# 3. Access application: kubectl port-forward -n development svc/mainwebsite 8080:80
-# 4. View logs: kubectl logs -n development -l app=mainwebsite
+# 1. Configure AWS credentials: aws configure
+# 2. Run: terraform init -backend-config="bucket=aws-info-website-terraform-state"
+# 3. Run: terraform apply -var-file="environments/dev.tfvars"
+# 4. Configure kubectl: aws eks update-kubeconfig --region us-east-1 --name aws-info-website-dev
+# 5. Verify deployment: kubectl get pods -n development
+# 6. Access application: kubectl port-forward -n development svc/mainwebsite 8080:80
+# 7. View logs: kubectl logs -n development -l app=mainwebsite

@@ -7,14 +7,14 @@ environment                   = "dev"
 
 # EKS Cluster Configuration
 create_cluster                = true
-cluster_name                  = "aws-info-website-dev"
+cluster_name                  = "aws_info_website_dev"
 kubernetes_version            = "1.28"
 
 # VPC/Network Configuration (replace with your subnet IDs)
 # Get your subnet IDs from your VPC configuration
 subnet_ids                    = [
-  "subnet-xxxxxxxx",  # Replace with your private subnet 1
-  "subnet-yyyyyyyy"   # Replace with your private subnet 2
+  "subnet-ccb26981",  # us-east-1a
+  "subnet-f96e7aa5"   # us-east-1b
 ]
 
 # Optional: Security Groups (leave empty for default)
@@ -31,7 +31,7 @@ cluster_log_types             = ["api", "audit", "authenticator"]
 node_group_min_size           = 1
 node_group_max_size           = 3
 node_group_desired_size       = 2
-node_instance_types           = ["t3.medium"]
+node_instance_types           = ["t2.small"]
 node_disk_size                = 50
 
 # Kubernetes & Helm Configuration
@@ -53,32 +53,14 @@ helm_set_values = {
 s3_bucket_name        = "aws-info-website-dev-data"
 s3_versioning_enabled = true
 
-# RDS MySQL Configuration
-rds_instance_class            = "db.t3.micro"
-rds_database_name             = "appdb"
-rds_master_username           = "dbadmin"
-rds_allocated_storage         = 20
-rds_num_read_replicas         = 0
-rds_backup_retention_period   = 7
-rds_engine_version            = "8.0.35"
-
 # State Management
-terraform_state_bucket        = "your-terraform-state-bucket-dev"
-terraform_state_key           = "aws-info-website/dev/terraform.tfstate"
+terraform_state_bucket = "tf-state-dev-your-account-id"
+terraform_state_key    = "aws_info_website_terraform_dev"
 
 # Tags
-common_labels = {
-  managed_by  = "terraform"
-  project     = "aws-info-website"
-  environment = "dev"
-}
-
 common_labels = {
   environment = "dev"
   managed_by  = "terraform"
   project     = "aws-info-website"
   team        = "platform"
 }
-
-terraform_state_bucket = "tf-state-dev-your-account-id"
-terraform_state_key    = "aws-info-website/terraform/dev"

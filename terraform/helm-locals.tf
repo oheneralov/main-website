@@ -30,9 +30,7 @@ locals {
   ################################################################################
   
   # Full chart reference for remote repositories
-  helm_chart_ref = var.helm_chart_repository != "" ? 
-    "${var.helm_chart_repository}/${var.helm_chart_namespace}/${var.helm_release_name}" : 
-    var.helm_chart_path
+  helm_chart_ref = var.helm_chart_repository != "" ? "${var.helm_chart_repository}/${var.helm_chart_namespace}/${var.helm_release_name}" : var.helm_chart_path
 
   ################################################################################
   # Helm Values Files for Current Environment

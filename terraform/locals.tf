@@ -9,14 +9,6 @@ locals {
   # Common naming pattern for all resources
   resource_prefix = "${local.helm_release_name}-${var.environment}"
 
-  # Cluster configuration
-  cluster_context = {
-    name     = var.cluster_name
-    region   = var.region
-    endpoint = data.google_container_cluster.gke.endpoint
-    project  = var.project_id
-  }
-
   # Environment-specific configuration
   environment_config = {
     dev = {

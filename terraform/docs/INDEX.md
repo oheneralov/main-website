@@ -44,7 +44,7 @@ terraform apply -var-file="environments/dev.tfvars"
 1. Review [BEST_PRACTICES.md](BEST_PRACTICES.md) first time
 2. Reference [variables.tf](variables.tf) for configuration options
 3. Check [locals.tf](locals.tf) for computed values
-4. Review modules in [modules/gke-deployment/](modules/gke-deployment/)
+4. Review EKS configuration in main.tf and helm.tf
 
 **Common Tasks**:
 - **Create new variable**: Edit [variables.tf](variables.tf)

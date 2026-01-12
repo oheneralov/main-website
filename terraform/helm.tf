@@ -48,20 +48,11 @@ resource "helm_release" "mainwebsite" {
   create_namespace = false # We explicitly created the namespace above
 
   # Load values from file
-  values = [
-    file("${var.helm_chart_path}/values.yaml")
-  ]
-
-  # Environment-specific values override
-  values_files = var.helm_values_files
-
-  # Additional inline values
-  dynamic "values" {
-    for_each = var.helm_inline_values
-    content {
-      values = [values.value]
-    }
-  }
+  values = concat(
+    [file("${var.helm_chart_path}/values.yaml")],
+    var.helm_values_files != null && length(var.helm_values_files) > 0 ? [for f in var.helm_values_files : file(f)] : [],
+    var.helm_inline_values != null && length(var.helm_inline_values) > 0 ? var.helm_inline_values : []
+  )
 
   # Individual set values (takes precedence over values files)
   dynamic "set" {
@@ -103,9 +94,6 @@ resource "helm_release" "mainwebsite" {
 
   # Cleanup on fail
   cleanup_on_fail = var.helm_cleanup_on_fail
-
-  # Debug mode
-  debug = var.helm_debug
 
   depends_on = [
     kubernetes_namespace.helm_namespace,
