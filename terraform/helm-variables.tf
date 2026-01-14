@@ -209,3 +209,30 @@ variable "helm_chart_namespace" {
   default     = ""
   nullable    = false
 }
+################################################################################
+# CRD Installation Variables
+################################################################################
+
+variable "install_traefik_crds" {
+  description = "Whether to install Traefik CRDs (required for IngressRoute)"
+  type        = bool
+  default     = true
+  nullable    = false
+}
+
+variable "traefik_crd_version" {
+  description = "Version of Traefik Helm chart for CRD installation"
+  type        = string
+  default     = "30.0.0" # Adjust based on your needs
+  nullable    = false
+}
+################################################################################
+# Kubernetes Deployment Control
+################################################################################
+
+variable "deploy_kubernetes_manifests" {
+  description = "Whether to deploy Kubernetes manifests via Helm during terraform apply. Set to false to skip K8s deployment and use the deploy-docker-and-k8s.sh script instead."
+  type        = bool
+  default     = true
+  nullable    = false
+}

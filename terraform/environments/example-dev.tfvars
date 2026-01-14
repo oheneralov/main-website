@@ -16,9 +16,6 @@ environment = "dev"
 # EKS Cluster Configuration
 # ============================================================
 
-# Whether to create a new EKS cluster (true) or reference an existing one (false)
-create_cluster = true
-
 # EKS cluster name
 cluster_name = "aws-info-website-dev"
 
@@ -46,8 +43,8 @@ cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "sche
 # ============================================================
 
 # Node group scaling
-node_group_min_size = 1
-node_group_max_size = 3
+node_group_min_size     = 1
+node_group_max_size     = 3
 node_group_desired_size = 2
 
 # EC2 instance types for the node group
@@ -94,32 +91,32 @@ helm_wait = true
 # For production: use specific versions like 'v1.0.0', never 'latest'
 
 mainwebsite_image_tag = "dev-latest"
-metrics_image_tag = "dev-latest"
+metrics_image_tag     = "dev-latest"
 
 # Additional Helm values to override in the chart
 # These are set as --set flags in Helm
 helm_set_values = {
   # Replica counts
-  "mainwebsite.replicaCount"           = "1"
-  "metrics.replicaCount"               = "1"
+  "mainwebsite.replicaCount" = "1"
+  "metrics.replicaCount"     = "1"
 
   # Resource requests (usually lower in dev)
-  "mainwebsite.resources.requests.memory"    = "256Mi"
-  "mainwebsite.resources.requests.cpu"       = "100m"
-  "mainwebsite.resources.limits.memory"      = "512Mi"
-  "mainwebsite.resources.limits.cpu"         = "500m"
+  "mainwebsite.resources.requests.memory" = "256Mi"
+  "mainwebsite.resources.requests.cpu"    = "100m"
+  "mainwebsite.resources.limits.memory"   = "512Mi"
+  "mainwebsite.resources.limits.cpu"      = "500m"
 
   # Autoscaling disabled in dev
-  "mainwebsite.autoscaling.enabled"   = "false"
-  "metrics.autoscaling.enabled"       = "false"
+  "mainwebsite.autoscaling.enabled" = "false"
+  "metrics.autoscaling.enabled"     = "false"
 
   # Ingress configuration (adjust hostname for your environment)
-  "ingress.enabled"                   = "true"
-  "ingress.hosts[0].host"             = "dev.aws-info-website.local"
-  "ingress.tls.enabled"               = "false"
+  "ingress.enabled"       = "true"
+  "ingress.hosts[0].host" = "dev.aws-info-website.local"
+  "ingress.tls.enabled"   = "false"
 
   # Update strategy
-  "mainwebsite.strategy.type"         = "RollingUpdate"
+  "mainwebsite.strategy.type" = "RollingUpdate"
 }
 
 # ============================================================

@@ -74,4 +74,54 @@ From the repo root, run `python main.py`. The script trains for 4 steps then sav
 - [qwen05-finetuned-lora8/README.md](qwen05-finetuned-lora8/README.md): model card template for the exported adapter; fill before sharing.
 - [qwen05-finetuned-lora8/checkpoint-4/](qwen05-finetuned-lora8/checkpoint-4/): last saved training checkpoint; mirrors the files above plus trainer state ([optimizer.pt](qwen05-finetuned-lora8/checkpoint-4/optimizer.pt), [scheduler.pt](qwen05-finetuned-lora8/checkpoint-4/scheduler.pt), [rng_state.pth](qwen05-finetuned-lora8/checkpoint-4/rng_state.pth), [trainer_state.json](qwen05-finetuned-lora8/checkpoint-4/trainer_state.json)) so you can resume or inspect training.
 
+### LLM and TRansformers
+
+Modern large language models (LLMs) such as Qwen are decoder-only Transformer stacks that map tokenized text to contextualized embeddings and next-token probability distributions. Each block repeats four primitives:
+
+1. **Token + positional encoding**: byte-pair tokens are embedded and mixed with rotary/absolute position features so the model can reason about order.
+2. **Multi-head self-attention**: query/key/value projections capture token-to-token dependencies. Attention scores are scaled by $\sqrt{d_k}$ before softmax to keep gradients stable, and heads are concatenated then linearly projected back to the model dimension.
+3. **Feed-forward network (FFN)**: a gated MLP expands the hidden size (typically $4\times$ the model dim) before projecting back down; activation functions such as SwiGLU or GELU add non-linearity.
+4. **Residual paths + LayerNorm**: pre-norm residual connections preserve signal and ease optimization, which is critical when adapting only a subset of weights via LoRA.
+
+During fine-tuning we freeze the dense base weights and inject low-rank adapters into the attention and FFN projections. Only the LoRA matrices learn task-specific deltas, so the Transformer stays stable even with short training runs. The Trainer surfaces next-token cross-entropy over causal masks, meaning every token predicts the subsequent token while preventing information leak from the future context.
+
+Key hyperparameters that strongly influence Transformer training dynamics:
+- **Sequence length** (`cfg.max_length=512`): caps context window; longer sequences improve reasoning chains but increase memory quadratically with attention.
+- **Hidden size / number of heads** (fixed by `cfg.model_id`): govern the representation capacity of each Transformer layer.
+- **Dropout + weight decay**: regularize the massive parameter count; LoRA-specific dropout prevents adapter overfitting even when base weights are frozen.
+- **Learning rate + scheduler**: cosine decay with warmup stabilizes the adapter optimization on top of the pretrained Transformer manifold.
+
+Because Transformers are autoregressive, evaluation and inference reuse the exact architecture: cached key/value tensors let us extend generations token by token without recomputing the full context. Loading the saved adapter from `qwen05-finetuned-lora8` and merging it into the base Transformer reproduces the fine-tuned LLM behavior in any downstream application.
+
+Implementation details that matter when debugging or extending the stack:
+
+- **Attention complexity**: memory/time scale with $O(L^2 \cdot H)$ where $L$ is sequence length and $H$ number of heads. The `cfg.max_length=512` choice keeps CPU-bound runs practical without resorting to FlashAttention.
+- **LoRA math**: each frozen projection $W_0 \in \mathbb{R}^{d_{out} \times d_{in}}$ gets a learnable low-rank delta $\Delta W = B A$ with $A \in \mathbb{R}^{r \times d_{in}}$, $B \in \mathbb{R}^{d_{out} \times r}$. Forward pass becomes $y = W_0 x + \alpha \frac{1}{r} B A x$, where $\alpha$ is `lora_alpha`. The adapters inject task-specific updates without touching the dense $W_0$ weights stored in the checkpoint.
+- **Causal masking**: triangular masks ensure token $t$ only attends to positions $\le t$. In Hugging Face `AutoModelForCausalLM`, this is handled automatically, but custom collators must preserve `labels=-100` on padding positions so they are ignored in the loss.
+- **Optimizer state**: although only adapter params update, AdamW still maintains first/second moments. Keeping `max_steps=4` ensures the moment buffers never grow large, but longer runs should monitor CPU RAM consumption inside `./qwen05-finetuned-lora8/checkpoint-*`.
+- **Mixed precision**: this configuration disables fp16/bf16 to avoid CPU instabilities. When moving to GPU, re-enable `bf16=True` (AMP on Ampere+) to accelerate attention/MLP kernels; ensure LoRA layers adopt the same dtype to prevent casting overhead.
+- **KV caching in inference**: when generating, store per-layer key/value tensors so the attention computation per new token drops from $O(L^2)$ to $O(L)$. Hugging Face `generate()` handles this internally; when exporting to services, confirm `use_cache=True` remains set.
+
+For more advanced adaptation scenarios, consider:
+
+- **Adapter fusion**: multiple LoRA adapters (e.g., domain-specific + task-specific) can be merged or linearly combined by scaling their deltas before applying them to $W_0$. PEFT supports this via `LoraModel.merge_and_unload()`.
+- **Quantization-aware LoRA**: pair 4-bit base weights (QLoRA) with fp16 adapters to cut memory further. This requires replacing `AutoModelForCausalLM.from_pretrained` with `AutoGPTQForCausalLM` or `BitsAndBytesConfig`, plus enabling `gradient_checkpointing=True` to offset activation growth.
+- **Extended context**: to push beyond 512 tokens, regenerate positional interpolation factors (e.g., YaRN) before training; otherwise extrapolated RoPE embeddings can drift and degrade answers. Monitor loss spikes if `cfg.max_length` exceeds the pretrained context window.
+
+These notes should equip you to reason about why the current fine-tune behaves the way it does, and what levers to pull when scaling up data, hardware, or deployment targets.
+
+Diagnostic checklist when validating LLM + Transformer runs:
+- **Gradient health**: watch `trainer_state.json` for exploding loss. If it happens, inspect LayerNorm gamma stats—since LoRA skips them, instability usually means the adapters’ effective LR (`learning_rate * lora_alpha / r`) is too high.
+- **Attention entropy**: log mean attention entropy per head; collapsing entropy implies the model is over-focusing on a few tokens. LoRA dropout or attention bias regularization can restore diversity.
+- **Tokenization drift**: Alpaca-style prompts rely on consistent BOS/EOS markers. Verify `tokenizer_config.json` `chat_template` matches inference-time formatting; otherwise instruction tokens may shift, producing degraded generations even if training loss is low.
+- **Throughput profiling**: on CPU, attention dominates wall-clock time. Use `torch.autograd.profiler.record_function` around `model.forward` to confirm no unintended gradients flow into frozen weights—if they do, call `model.requires_grad_(False)` before applying LoRA.
+
+Deployment reminders:
+- Exporting to TorchScript/ONNX requires merging adapters (`model = model.merge_and_unload()`) so downstream runtimes see a vanilla Transformer weight tensor.
+- For latency-sensitive inference, pin the tokenizer and adapter weights to the same storage tier as the base model to avoid cold-load stalls, and preload KV caches for prompt prefixes shared across requests.
+- Monitor `servicemonitor.yaml` metrics (tokens/sec, cache hit rate) to detect when context windows or batch sizes need retuning.
+
+
+
+## React, COT
 

@@ -16,16 +16,6 @@ locals {
       replica_count_metrics = 1
       enable_monitoring     = false
     }
-    staging = {
-      replica_count_main    = 2
-      replica_count_metrics = 1
-      enable_monitoring     = true
-    }
-    production = {
-      replica_count_main    = 3
-      replica_count_metrics = 2
-      enable_monitoring     = true
-    }
   }
 
   # Select environment-specific config
@@ -47,11 +37,11 @@ locals {
 
   # Deployment tracking
   deployment_metadata = {
-    release_name       = local.helm_release_name
-    namespace          = var.kubernetes_namespace
-    chart_path         = var.helm_chart_path
-    environment        = var.environment
-    deployed_at        = timestamp()
-    terraform_version  = "~> 1.0"
+    release_name      = local.helm_release_name
+    namespace         = var.kubernetes_namespace
+    chart_path        = var.helm_chart_path
+    environment       = var.environment
+    deployed_at       = timestamp()
+    terraform_version = "~> 1.0"
   }
 }

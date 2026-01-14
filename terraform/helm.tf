@@ -10,19 +10,31 @@
 
 provider "helm" {
   kubernetes {
-    host                   = data.aws_eks_cluster.cluster.endpoint
-    cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
-    token                  = data.aws_eks_cluster_auth.cluster.token
+    host                   = local.eks_cluster_endpoint
+    cluster_ca_certificate = base64decode(local.eks_cluster_ca_data)
+
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args = [
+        "eks",
+        "get-token",
+        "--cluster-name", local.eks_cluster_name,
+        "--region", var.region
+      ]
+    }
   }
 }
+
 
 ################################################################################
 # Create Kubernetes Namespace
 ################################################################################
 
 resource "kubernetes_namespace" "helm_namespace" {
+  count = var.deploy_kubernetes_manifests ? 1 : 0
   metadata {
-    name   = var.kubernetes_namespace
+    name = var.kubernetes_namespace
     labels = merge(
       var.common_labels,
       {
@@ -31,19 +43,46 @@ resource "kubernetes_namespace" "helm_namespace" {
     )
   }
 
+  depends_on = [aws_eks_cluster.main]
+}
+
+################################################################################
+# Install Required CRDs
+################################################################################
+
+# Traefik CRDs (for IngressRoute)
+resource "helm_release" "traefik_crds" {
+  count      = var.install_traefik_crds && var.deploy_kubernetes_manifests ? 1 : 0
+  name       = "traefik-crds"
+  chart      = "traefik"
+  version    = var.traefik_crd_version
+  repository = "https://helm.traefik.io/traefik"
+  namespace  = "kube-system"
+
+  # Install only CRDs
+  set {
+    name  = "installCRDs"
+    value = "true"
+  }
+
   depends_on = [
-    data.aws_eks_cluster.cluster
+    kubernetes_namespace.helm_namespace,
+    aws_eks_cluster.main,
+    aws_eks_node_group.main
   ]
 }
+
+
 
 ################################################################################
 # Main Website Helm Release
 ################################################################################
 
 resource "helm_release" "mainwebsite" {
+  count            = var.deploy_kubernetes_manifests ? 1 : 0
   name             = var.helm_release_name
   chart            = var.helm_chart_path
-  namespace        = kubernetes_namespace.helm_namespace.metadata[0].name
+  namespace        = length(kubernetes_namespace.helm_namespace) > 0 ? kubernetes_namespace.helm_namespace[0].metadata[0].name : var.kubernetes_namespace
   version          = var.helm_chart_version
   create_namespace = false # We explicitly created the namespace above
 
@@ -64,12 +103,11 @@ resource "helm_release" "mainwebsite" {
   }
 
   # Complex object values (from set_sensitive for secrets)
-  dynamic "set" {
+  dynamic "set_sensitive" {
     for_each = var.helm_set_sensitive_values
     content {
-      name      = set.key
-      value     = set.value
-      sensitive = true
+      name  = set_sensitive.key
+      value = set_sensitive.value
     }
   }
 
@@ -83,7 +121,7 @@ resource "helm_release" "mainwebsite" {
   max_history = var.helm_max_history
 
   # Wait for resources to be ready
-  wait = var.helm_wait
+  wait          = var.helm_wait
   wait_for_jobs = var.helm_wait_for_jobs
 
   # Recreate pods if necessary
@@ -97,7 +135,9 @@ resource "helm_release" "mainwebsite" {
 
   depends_on = [
     kubernetes_namespace.helm_namespace,
-    data.aws_eks_cluster.cluster
+    helm_release.traefik_crds,
+    aws_eks_cluster.main,
+    aws_eks_node_group.main
   ]
 }
 
@@ -106,12 +146,12 @@ resource "helm_release" "mainwebsite" {
 ################################################################################
 
 resource "kubernetes_service_account" "helm_service_account" {
-  count = var.create_helm_service_account ? 1 : 0
+  count = var.create_helm_service_account && var.deploy_kubernetes_manifests ? 1 : 0
 
   metadata {
     name      = "${var.helm_release_name}-sa"
-    namespace = kubernetes_namespace.helm_namespace.metadata[0].name
-    labels    = merge(
+    namespace = length(kubernetes_namespace.helm_namespace) > 0 ? kubernetes_namespace.helm_namespace[0].metadata[0].name : var.kubernetes_namespace
+    labels = merge(
       var.common_labels,
       {
         "helm-release" = var.helm_release_name

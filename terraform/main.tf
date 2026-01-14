@@ -1,12 +1,11 @@
 ################################################################################
-# EKS Cluster Creation (if create_cluster is true)
+# EKS Cluster Creation
 ################################################################################
 
 resource "aws_eks_cluster" "main" {
-  count            = var.create_cluster ? 1 : 0
-  name             = var.cluster_name
-  version          = var.kubernetes_version
-  role_arn         = aws_iam_role.eks_cluster_role[0].arn
+  name                      = var.cluster_name
+  version                   = var.kubernetes_version
+  role_arn                  = aws_iam_role.eks_cluster_role.arn
   enabled_cluster_log_types = var.cluster_log_types
 
   vpc_config {
@@ -33,10 +32,9 @@ resource "aws_eks_cluster" "main" {
 ################################################################################
 
 resource "aws_eks_node_group" "main" {
-  count           = var.create_cluster ? 1 : 0
-  cluster_name    = aws_eks_cluster.main[0].name
+  cluster_name    = aws_eks_cluster.main.name
   node_group_name = "${var.cluster_name}-node-group"
-  node_role_arn   = aws_iam_role.eks_node_role[0].arn
+  node_role_arn   = aws_iam_role.eks_node_role.arn
   subnet_ids      = var.subnet_ids
   version         = var.kubernetes_version
 
@@ -70,8 +68,7 @@ resource "aws_eks_node_group" "main" {
 
 # EKS Cluster Role
 resource "aws_iam_role" "eks_cluster_role" {
-  count = var.create_cluster ? 1 : 0
-  name  = "${var.cluster_name}-cluster-role"
+  name = "${var.cluster_name}-cluster-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -95,15 +92,13 @@ resource "aws_iam_role" "eks_cluster_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
-  count      = var.create_cluster ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.eks_cluster_role[0].name
+  role       = aws_iam_role.eks_cluster_role.name
 }
 
 # EKS Node Role
 resource "aws_iam_role" "eks_node_role" {
-  count = var.create_cluster ? 1 : 0
-  name  = "${var.cluster_name}-node-role"
+  name = "${var.cluster_name}-node-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -127,47 +122,48 @@ resource "aws_iam_role" "eks_node_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "eks_node_policy" {
-  count      = var.create_cluster ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  role       = aws_iam_role.eks_node_role[0].name
+  role       = aws_iam_role.eks_node_role.name
 }
 
 resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
-  count      = var.create_cluster ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = aws_iam_role.eks_node_role[0].name
+  role       = aws_iam_role.eks_node_role.name
 }
 
 resource "aws_iam_role_policy_attachment" "eks_container_registry_policy" {
-  count      = var.create_cluster ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = aws_iam_role.eks_node_role[0].name
+  role       = aws_iam_role.eks_node_role.name
 }
 
 ################################################################################
-# Reference existing or created cluster
+# Reference created cluster metadata
 ################################################################################
 
-data "aws_eks_cluster" "cluster" {
-  name = var.create_cluster ? aws_eks_cluster.main[0].name : var.cluster_name
-}
-
-data "aws_eks_cluster_auth" "cluster" {
-  name = var.create_cluster ? aws_eks_cluster.main[0].name : var.cluster_name
+locals {
+  eks_cluster_name     = aws_eks_cluster.main.name
+  eks_cluster_endpoint = aws_eks_cluster.main.endpoint
+  eks_cluster_ca_data  = aws_eks_cluster.main.certificate_authority[0].data
+  eks_cluster_arn      = aws_eks_cluster.main.arn
 }
 
 provider "kubernetes" { # Configure the Kubernetes provider to interact with the EKS cluster
-  host                   = data.aws_eks_cluster.cluster.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
-  token                  = data.aws_eks_cluster_auth.cluster.token
+  host                   = local.eks_cluster_endpoint
+  cluster_ca_certificate = base64decode(local.eks_cluster_ca_data)
+
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args = [
+      "eks",
+      "get-token",
+      "--cluster-name", local.eks_cluster_name,
+      "--region", var.region
+    ]
+  }
 }
 
 ################################################################################
-# Helm Configuration
-################################################################################
-# Helm provider and release configuration moved to dedicated helm.tf file
-# This separation improves maintainability and organization
-#
 # See helm.tf for:
 # - Helm provider configuration
 # - Helm release definitions

@@ -19,7 +19,7 @@ Infrastructure-as-code configuration for deploying the AWS Info Website on Amazo
 
 ### What This Terraform Module Does
 
-- **EKS Cluster Integration**: Manages connection and authentication to existing Amazon EKS clusters
+- **EKS Cluster Provisioning**: Creates and configures an Amazon EKS cluster with Kubernetes control plane logging
 - **Multi-Environment Support**: Handles dev, staging, and production environments with environment-specific variables
 - **Helm Deployments**: Deploys the mainwebsite and associated services using Helm charts
 - **State Management**: Configurable remote state storage in AWS S3
@@ -29,7 +29,7 @@ Infrastructure-as-code configuration for deploying the AWS Info Website on Amazo
 
 ```
 AWS Account
-├── EKS Cluster (existing or managed)
+├── EKS Cluster (provisioned by Terraform)
 │   ├── Kubernetes Namespace (configurable)
 │   └── Helm Releases
 │       ├── mainwebsite (primary application)
@@ -58,6 +58,8 @@ kubectl version --client
 helm version
 ```
 
+> **Note:** Terraform shells out to `aws eks get-token` to authenticate the Kubernetes and Helm providers. Make sure the AWS CLI is installed and available on the system (including CI runners) executing `terraform plan` / `terraform apply`.
+
 ### AWS Credentials
 
 Configure AWS credentials using one of these methods:
@@ -79,17 +81,17 @@ aws_secret_access_key = your-secret-key
 
 ### EKS Cluster
 
-An existing EKS cluster must be available. Verify access:
+Terraform provisions the EKS cluster defined by your `cluster_name`. After the deployment completes you can verify access with the AWS CLI:
 
 ```bash
 # List available clusters
 aws eks list-clusters --region us-east-1
 
 # Get cluster details
-aws eks describe-cluster --name your-cluster-name --region us-east-1
+aws eks describe-cluster --name aws-info-website-dev --region us-east-1
 
 # Configure kubectl
-aws eks update-kubeconfig --name your-cluster-name --region us-east-1
+aws eks update-kubeconfig --name aws-info-website-dev --region us-east-1
 
 # Verify cluster access
 kubectl cluster-info
@@ -242,7 +244,7 @@ kubernetes_namespace = "dev"
 |----------|----------|---------|-------------|
 | `region` | Yes | `us-east-1` | AWS region for deployment |
 | `environment` | Yes | N/A | Environment name: dev, staging, or production |
-| `cluster_name` | Yes | N/A | Name of the existing EKS cluster |
+| `cluster_name` | Yes | N/A | Name to assign to the EKS cluster that Terraform creates |
 | `kubernetes_namespace` | No | `default` | Kubernetes namespace for deployment |
 | `helm_release_name` | No | `mainwebsite` | Helm release name |
 | `helm_chart_path` | No | `../helm-dir` | Path to Helm chart directory |

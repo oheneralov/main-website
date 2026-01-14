@@ -106,6 +106,21 @@ End-to-end pipeline for RAG workflows:
 ### ChromaRetriever
 LangChain-compatible retriever wrapper
 
+## Reasoning Strategies: ReAct & CoT
+
+### Chain-of-Thought (CoT) in RAG
+- **What it is**: CoT prompts instruct the LLM to narrate intermediate reasoning before answering, which reduces hallucinations when paired with retrieved snippets.
+- **How to use**: After calling `RAGPipeline.generate_prompt_with_context(...)`, wrap the result with a CoT suffix such as `"Let's think step by step using only the context above."` so the model verbalizes grounding steps that cite `[chunk-id]` markers from the augmented context.
+- **Why it matters**: Inspectable reasoning lets you validate that each deduction references a retrieved chunk, and you can automatically flag responses whose CoT traces omit citations.
+
+### ReAct (Reason + Act) with ChromaRetriever
+- **What it is**: ReAct alternates between thought states and actions (e.g., `Search[...]`, `Lookup[...]`) so the LLM can iteratively call the retriever until it has sufficient evidence.
+- **How to wire it**: In LangChain, map the `ChromaRetriever` into a `Tool` and build a `ReActChain` or `AgentExecutor`. Each `Act` step issues a new `retriever.get_relevant_documents()` call, while the `Reason` step examines the snippet IDs/metadata to decide on the next action.
+- **Control knobs**: Limit the max action count (e.g., `max_iterations=5`) to keep latency predictable, and stream the intermediate thoughts for observability.
+- **Benefits**: ReAct turns the static retrieve-then-answer loop into an interactive plan-and-execute cycle that can fetch disjoint facts, cross-check conflicting chunks, and bail out with an "I don't know" if the retriever stops returning relevant hits.
+
+When combined, CoT provides transparent reasoning within each ReAct "thought" block, yielding rich traces such as `Thought 2: Using doc [a12] and [b04], the SLA mention is 99.9%. Action 2: Search("monthly uptime")`. This makes debugging RAG quality much easier and enables guardrails that verify every final statement references at least one retrieved document ID.
+
 ## Performance Considerations
 
 - **Embedding Model**: Uses `all-MiniLM-L6-v2` by default (fast, lightweight)

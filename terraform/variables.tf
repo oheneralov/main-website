@@ -19,26 +19,20 @@ variable "region" {
 ################################################################################
 
 variable "environment" {
-  description = "Environment name (dev, staging, production)"
+  description = "Environment name (dev only)"
   type        = string
+  default     = "dev"
   nullable    = false
 
   validation {
-    condition     = contains(["dev", "staging", "production"], var.environment)
-    error_message = "Environment must be one of: dev, staging, production."
+    condition     = var.environment == "dev"
+    error_message = "Only the dev environment is supported."
   }
 }
 
 ################################################################################
 # Kubernetes & EKS Configuration
 ################################################################################
-
-variable "create_cluster" {
-  description = "Whether to create a new EKS cluster (true) or reference an existing one (false)"
-  type        = bool
-  default     = true
-  nullable    = false
-}
 
 variable "cluster_name" {
   description = "Name of the EKS cluster to create or reference"

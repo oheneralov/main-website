@@ -9,59 +9,54 @@ output "aws_region" {
 
 output "eks_cluster_name" {
   description = "Name of the EKS cluster"
-  value       = data.aws_eks_cluster.cluster.name
+  value       = local.eks_cluster_name
 }
 
 output "eks_cluster_endpoint" {
   description = "EKS cluster endpoint (Kubernetes API server address)"
-  value       = data.aws_eks_cluster.cluster.endpoint
+  value       = local.eks_cluster_endpoint
   sensitive   = true
 }
 
 output "eks_cluster_ca_certificate" {
   description = "EKS cluster CA certificate (for kubectl configuration)"
-  value       = data.aws_eks_cluster.cluster.certificate_authority[0].data
+  value       = local.eks_cluster_ca_data
   sensitive   = true
 }
 
 output "eks_cluster_arn" {
   description = "The Amazon Resource Name (ARN) of the EKS cluster"
-  value       = data.aws_eks_cluster.cluster.arn
-}
-
-output "eks_cluster_created" {
-  description = "Whether a new EKS cluster was created"
-  value       = var.create_cluster
+  value       = local.eks_cluster_arn
 }
 
 output "eks_cluster_status" {
   description = "Status of the EKS cluster"
-  value       = try(aws_eks_cluster.main[0].status, "EXISTING")
+  value       = aws_eks_cluster.main.status
 }
 
 output "eks_cluster_version" {
   description = "Kubernetes version of the EKS cluster"
-  value       = try(aws_eks_cluster.main[0].version, var.kubernetes_version)
+  value       = aws_eks_cluster.main.version
 }
 
 output "eks_node_group_id" {
   description = "EKS node group ID"
-  value       = try(aws_eks_node_group.main[0].id, null)
+  value       = aws_eks_node_group.main.id
 }
 
 output "eks_node_group_status" {
   description = "Status of the EKS node group"
-  value       = try(aws_eks_node_group.main[0].status, null)
+  value       = aws_eks_node_group.main.status
 }
 
 output "eks_cluster_role_arn" {
   description = "ARN of the EKS cluster IAM role"
-  value       = try(aws_iam_role.eks_cluster_role[0].arn, null)
+  value       = aws_iam_role.eks_cluster_role.arn
 }
 
 output "eks_node_role_arn" {
   description = "ARN of the EKS node IAM role"
-  value       = try(aws_iam_role.eks_node_role[0].arn, null)
+  value       = aws_iam_role.eks_node_role.arn
 }
 
 ################################################################################
@@ -69,7 +64,7 @@ output "eks_node_role_arn" {
 ################################################################################
 
 output "environment" {
-  description = "Deployment environment (dev, staging, production)"
+  description = "Deployment environment (dev)"
   value       = var.environment
 }
 
@@ -94,7 +89,7 @@ output "metrics_image_tag" {
 
 output "kubectl_configure_command" {
   description = "Command to configure kubectl context"
-  value       = "aws eks update-kubeconfig --name ${data.aws_eks_cluster.cluster.name} --region ${var.region}"
+  value       = "aws eks update-kubeconfig --name ${local.eks_cluster_name} --region ${var.region}"
 }
 
 output "helm_list_command" {
@@ -109,5 +104,5 @@ output "kubectl_get_pods_command" {
 
 output "kubectl_logs_command" {
   description = "Command to view application logs"
-  value       = "kubectl logs -n ${var.kubernetes_namespace} -l app.kubernetes.io/instance=${helm_release.mainwebsite.name}"
+  value       = length(helm_release.mainwebsite) > 0 ? "kubectl logs -n ${var.kubernetes_namespace} -l app.kubernetes.io/instance=${helm_release.mainwebsite[0].name}" : ""
 }

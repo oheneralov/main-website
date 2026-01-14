@@ -2,7 +2,7 @@
 
 ################################################################################
 # EKS Cluster Deployment Helper Script
-# Usage: ./eks-deploy.sh [dev|staging|prod] [plan|apply|destroy]
+# Usage: ./eks-deploy.sh dev [plan|apply|destroy]
 ################################################################################
 
 set -e
@@ -17,7 +17,7 @@ NC='\033[0m' # No Color
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TERRAFORM_DIR="${SCRIPT_DIR}"
-ENVIRONMENTS=("dev" "staging" "production")
+ENVIRONMENTS=("dev")
 ACTIONS=("plan" "apply" "destroy" "output" "refresh")
 
 ################################################################################
@@ -42,12 +42,10 @@ log_error() {
 
 print_usage() {
     cat << EOF
-Usage: $0 [ENVIRONMENT] [ACTION] [OPTIONS]
+Usage: $0 dev [ACTION] [OPTIONS]
 
 ENVIRONMENT:
-    dev         - Development cluster
-    staging     - Staging cluster
-    prod        - Production cluster
+    dev         - Development cluster (only supported environment)
 
 ACTION:
     plan        - Show what will be created/changed
@@ -66,11 +64,11 @@ EXAMPLES:
     # Plan deployment to dev
     $0 dev plan
 
-    # Apply to staging
-    $0 staging apply
+    # Apply changes
+    $0 dev apply
 
-    # Destroy production (with confirmation)
-    $0 prod destroy
+    # Destroy dev (with confirmation)
+    $0 dev destroy
 
     # Plan with variable override
     $0 dev plan -v node_group_desired_size=5
@@ -295,12 +293,8 @@ while [ $# -gt 0 ]; do
             NO_CONFIRM=true
             shift
             ;;
-        dev|staging|prod|production)
-            if [ "$1" == "prod" ]; then
-                ENVIRONMENT="production"
-            else
-                ENVIRONMENT="$1"
-            fi
+        dev)
+            ENVIRONMENT="$1"
             shift
             ;;
         plan|apply|destroy|output|refresh)

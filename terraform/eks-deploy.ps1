@@ -3,7 +3,7 @@
 
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet("dev", "staging", "prod", "production")]
+    [ValidateSet("dev")]
     [string]$Environment,
     
     [Parameter(Mandatory=$true)]
@@ -39,12 +39,7 @@ function Write-ErrorMessage {
 # Configuration
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $TerraformDir = $ScriptDir
-$Environments = @("dev", "staging", "production")
-
-# Normalize environment
-if ($Environment -eq "prod") {
-    $Environment = "production"
-}
+$Environments = @("dev")
 
 ################################################################################
 # Functions

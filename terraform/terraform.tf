@@ -23,7 +23,7 @@ terraform {
   # Backend configuration is provided via:
   # - Backend config file: terraform init -backend-config=backend-config.tfvars
   # - Command line flags: terraform init -backend-config="bucket=..." -backend-config="key=..."
-  # - Environment file in each environment directory (dev.tfvars, staging.tfvars, production.tfvars)
+  # - Environment file in environments/dev.tfvars
   backend "s3" {
     # Bucket and key are configured via backend-config during init
     # Example: terraform init -backend-config="bucket=tf-state-bucket-name" -backend-config="key=aws-info-website/terraform"
