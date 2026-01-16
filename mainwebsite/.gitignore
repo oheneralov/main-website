@@ -2,7 +2,6 @@
 /dist
 /node_modules
 mainwebsite/node_modules
-metrics/node_modules
 
 /build
 

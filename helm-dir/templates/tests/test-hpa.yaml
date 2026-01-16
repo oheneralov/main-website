@@ -1,4 +1,4 @@
-{{- if or .Values.mainwebsite.autoscaling.enabled .Values.metrics.autoscaling.enabled }}
+{{- if .Values.mainwebsite.autoscaling.enabled }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -28,18 +28,6 @@ spec:
             kubectl get hpa {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.status}'
           else
             echo "✗ Mainwebsite HPA not found"
-            exit 1
-          fi
-          {{- end }}
-          
-          {{- if .Values.metrics.autoscaling.enabled }}
-          echo "Checking metrics HPA..."
-          kubectl get hpa {{ include "helm-dir.fullname" . }}-metrics -n {{ .Values.global.namespace | default .Release.Namespace }}
-          if [ $? -eq 0 ]; then
-            echo "✓ Metrics HPA found"
-            kubectl get hpa {{ include "helm-dir.fullname" . }}-metrics -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.status}'
-          else
-            echo "✗ Metrics HPA not found"
             exit 1
           fi
           {{- end }}

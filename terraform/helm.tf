@@ -72,6 +72,22 @@ resource "helm_release" "traefik_crds" {
   ]
 }
 
+# Prometheus Operator CRDs (needed for ServiceMonitor, PodMonitor, etc.)
+resource "helm_release" "prometheus_crds" {
+  count      = var.install_prometheus_crds && var.deploy_kubernetes_manifests ? 1 : 0
+  name       = "prometheus-operator-crds"
+  chart      = "prometheus-operator-crds"
+  repository = "https://prometheus-community.github.io/helm-charts"
+  namespace  = "kube-system"
+  version    = var.prometheus_crd_chart_version != null ? var.prometheus_crd_chart_version : null
+
+  depends_on = [
+    kubernetes_namespace.helm_namespace,
+    aws_eks_cluster.main,
+    aws_eks_node_group.main
+  ]
+}
+
 
 
 ################################################################################
@@ -136,6 +152,7 @@ resource "helm_release" "mainwebsite" {
   depends_on = [
     kubernetes_namespace.helm_namespace,
     helm_release.traefik_crds,
+    helm_release.prometheus_crds,
     aws_eks_cluster.main,
     aws_eks_node_group.main
   ]

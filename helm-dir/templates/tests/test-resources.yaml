@@ -40,27 +40,6 @@ spec:
           echo "✓ CPU Request: $CPU_REQUEST, Memory Request: $MEMORY_REQUEST"
           {{- end }}
           
-          {{- if .Values.metrics.enabled }}
-          echo "Checking metrics resource configuration..."
-          METRICS_POD=$(kubectl get pods -n {{ .Values.global.namespace | default .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=metrics -o jsonpath='{.items[0].metadata.name}')
-          
-          if [ -z "$METRICS_POD" ]; then
-            echo "✗ No metrics pods found"
-            exit 1
-          fi
-          
-          echo "Pod: $METRICS_POD"
-          
-          # Check CPU and Memory
-          CPU_LIMIT=$(kubectl get pod $METRICS_POD -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.spec.containers[0].resources.limits.cpu}')
-          MEMORY_LIMIT=$(kubectl get pod $METRICS_POD -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.spec.containers[0].resources.limits.memory}')
-          CPU_REQUEST=$(kubectl get pod $METRICS_POD -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.spec.containers[0].resources.requests.cpu}')
-          MEMORY_REQUEST=$(kubectl get pod $METRICS_POD -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.spec.containers[0].resources.requests.memory}')
-          
-          echo "✓ CPU Limit: $CPU_LIMIT, Memory Limit: $MEMORY_LIMIT"
-          echo "✓ CPU Request: $CPU_REQUEST, Memory Request: $MEMORY_REQUEST"
-          {{- end }}
-          
           echo "✓ All resource configurations verified"
           exit 0
   restartPolicy: Never

@@ -37,7 +37,7 @@ node_disk_size          = 50
 kubernetes_namespace   = "development"
 helm_chart_path        = "../helm-dir"
 helm_release_name      = "mainwebsite"
-helm_timeout           = 300
+helm_timeout           = 1200
 helm_atomic_deployment = true
 
 # CRD Installation
@@ -45,11 +45,9 @@ install_traefik_crds = true
 traefik_crd_version  = "30.0.0"
 
 mainwebsite_image_tag = "dev-latest"
-metrics_image_tag     = "dev-latest"
 
 helm_set_values = {
   "mainwebsite.replicaCount" = "1"
-  "metrics.replicaCount"     = "1"
 }
 
 # S3 Configuration

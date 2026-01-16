@@ -12,9 +12,8 @@ locals {
   # Environment-specific configuration
   environment_config = {
     dev = {
-      replica_count_main    = 1
-      replica_count_metrics = 1
-      enable_monitoring     = false
+      replica_count_main = 1
+      enable_monitoring  = false
     }
   }
 

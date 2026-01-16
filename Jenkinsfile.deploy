@@ -21,7 +21,6 @@ pipeline {
         GKE_ZONE = credentials('gke-zone')
         DOCKER_REGISTRY = 'gcr.io'
         MAINWEBSITE_IMAGE_NAME = "${DOCKER_REGISTRY}/${GCP_PROJECT_ID}/mainwebsite"
-        METRICS_IMAGE_NAME = "${DOCKER_REGISTRY}/${GCP_PROJECT_ID}/metrics"
         DEPLOYMENT_NAMESPACE = "${params.DEPLOYMENT_ENV}"
         HELM_RELEASE_NAME = "gcp-info-${params.DEPLOYMENT_ENV}"
     }
@@ -51,9 +50,6 @@ pipeline {
                     sh '''
                         echo "Verifying Main Website image..."
                         gcloud container images describe ${MAINWEBSITE_IMAGE_NAME}:${IMAGE_TAG}
-                        
-                        echo "Verifying Metrics image..."
-                        gcloud container images describe ${METRICS_IMAGE_NAME}:${IMAGE_TAG}
                     '''
                 }
             }
@@ -109,7 +105,6 @@ pipeline {
                 script {
                     sh '''
                         kubectl apply -f k8s-manifests/mainwebsite-service.yaml -n ${DEPLOYMENT_NAMESPACE}
-                        kubectl apply -f k8s-manifests/metrics-service.yaml -n ${DEPLOYMENT_NAMESPACE}
                     '''
                 }
             }
@@ -122,10 +117,6 @@ pipeline {
                         # Update image tags in deployment manifests
                         cat k8s-manifests/mainwebsite-deployment.yaml | \
                             sed "s|image: .*mainwebsite:.*|image: ${MAINWEBSITE_IMAGE_NAME}:${IMAGE_TAG}|g" | \
-                            kubectl apply -f - -n ${DEPLOYMENT_NAMESPACE}
-                        
-                        cat k8s-manifests/metrics-deployment.yaml | \
-                            sed "s|image: .*metrics:.*|image: ${METRICS_IMAGE_NAME}:${IMAGE_TAG}|g" | \
                             kubectl apply -f - -n ${DEPLOYMENT_NAMESPACE}
                     '''
                 }
@@ -148,7 +139,6 @@ pipeline {
                     sh '''
                         echo "Waiting for deployments to be ready..."
                         kubectl rollout status deployment/mainwebsite -n ${DEPLOYMENT_NAMESPACE} --timeout=5m
-                        kubectl rollout status deployment/metrics -n ${DEPLOYMENT_NAMESPACE} --timeout=5m
                         
                         echo "Checking pod status..."
                         kubectl get pods -n ${DEPLOYMENT_NAMESPACE}
@@ -183,7 +173,6 @@ pipeline {
                     sh '''
                         # Verify resource limits and requests are applied
                         kubectl describe deployment mainwebsite -n ${DEPLOYMENT_NAMESPACE} | grep -E "Requests|Limits"
-                        kubectl describe deployment metrics -n ${DEPLOYMENT_NAMESPACE} | grep -E "Requests|Limits"
                         
                         # Check for any recent pod restarts
                         echo "Checking for pod issues..."
@@ -216,7 +205,6 @@ pipeline {
                 // Collect deployment logs for analysis
                 sh '''
                     kubectl logs -n ${DEPLOYMENT_NAMESPACE} -l app=mainwebsite --tail=100 > mainwebsite-logs.txt || true
-                    kubectl logs -n ${DEPLOYMENT_NAMESPACE} -l app=metrics --tail=100 > metrics-logs.txt || true
                 '''
                 archiveArtifacts artifacts: '*-logs.txt', allowEmptyArchive: true
             }

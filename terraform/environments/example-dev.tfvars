@@ -91,14 +91,12 @@ helm_wait = true
 # For production: use specific versions like 'v1.0.0', never 'latest'
 
 mainwebsite_image_tag = "dev-latest"
-metrics_image_tag     = "dev-latest"
 
 # Additional Helm values to override in the chart
 # These are set as --set flags in Helm
 helm_set_values = {
   # Replica counts
   "mainwebsite.replicaCount" = "1"
-  "metrics.replicaCount"     = "1"
 
   # Resource requests (usually lower in dev)
   "mainwebsite.resources.requests.memory" = "256Mi"
@@ -108,7 +106,6 @@ helm_set_values = {
 
   # Autoscaling disabled in dev
   "mainwebsite.autoscaling.enabled" = "false"
-  "metrics.autoscaling.enabled"     = "false"
 
   # Ingress configuration (adjust hostname for your environment)
   "ingress.enabled"       = "true"

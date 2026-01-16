@@ -95,7 +95,6 @@ function Write-Info {
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = Split-Path -Parent $ScriptDir
 $MainwebsiteDir = Join-Path $ProjectRoot "mainwebsite"
-$MetricsDir = Join-Path $ProjectRoot "metrics"
 
 # Check prerequisites
 function Test-Prerequisites {
@@ -340,14 +339,6 @@ function Main {
             Push-ToECR "mainwebsite" $mainwebsiteImage $ecrRegistry
         }
         
-        # Build and push metrics service (if Dockerfile exists)
-        $metricsDockerfile = Join-Path $MetricsDir "Dockerfile"
-        if (Test-Path $metricsDockerfile) {
-            $metricsImage = Build-DockerImage "metrics" $metricsDockerfile $MetricsDir
-            if ($metricsImage) {
-                Push-ToECR "metrics" $metricsImage $ecrRegistry
-            }
-        }
     } else {
         Write-Warning "Skipping Docker build and ECR push"
     }

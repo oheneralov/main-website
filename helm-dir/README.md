@@ -1,12 +1,11 @@
 # Mainwebsite Helm Chart
 
-A production-grade Helm chart for deploying the GCP-based website application with multi-service architecture on Kubernetes.
+A production-grade Helm chart for deploying the GCP-based website application as a single-service workload on Kubernetes.
 
 ## Overview
 
 This chart deploys:
 - **mainwebsite**: Primary web application service
-- **metrics**: Metrics aggregation service
 - **ServiceMonitor**: Prometheus monitoring integration
 - **HPA**: Horizontal Pod Autoscaling (configurable per environment)
 - **RBAC**: Service accounts and cluster roles
@@ -48,7 +47,6 @@ The chart uses a hierarchical values structure for better organization:
 ```yaml
 global:           # Global configuration
 mainwebsite:      # Main application service config
-metrics:          # Metrics service config
 monitoring:       # Prometheus monitoring config
 ingress:          # Ingress routing config
 serviceAccount:   # RBAC configuration
@@ -60,7 +58,7 @@ rbac:             # RBAC enablement
 Three pre-configured environment values files are provided:
 
 #### `values-dev.yaml`
-- Single replica per service
+- Single replica for the application
 - Development image tags (`dev-latest`)
 - Reduced resource requests
 - Autoscaling disabled
@@ -86,12 +84,11 @@ Three pre-configured environment values files are provided:
 
 ## Key Features
 
-### 1. Multi-Service Architecture
-Each service (mainwebsite, metrics) is independently configurable with:
-- Separate Deployments
-- Individual Service definitions
-- Independent scaling policies
-- Isolated resource constraints
+### 1. Application Deployment
+The mainwebsite workload ships with:
+- Dedicated Deployment and Service definitions
+- Optional Horizontal Pod Autoscaler per environment
+- Explicit resource requests and limits
 
 ### 2. Flexible Probes Configuration
 Liveness and readiness probes with configurable:
@@ -103,7 +100,6 @@ Liveness and readiness probes with configurable:
 ### 3. Monitoring Integration
 - ServiceMonitor CRDs for Prometheus
 - Configurable metrics port and path
-- Per-service monitoring selectors
 
 ### 4. Ingress Management
 - Traefik IngressRoute support
@@ -125,15 +121,6 @@ Liveness and readiness probes with configurable:
 - Horizontal Pod Autoscaler (HPA v2)
 
 ## Customization
-
-### Deploy Only Mainwebsite
-
-```yaml
-mainwebsite:
-  enabled: true
-metrics:
-  enabled: false
-```
 
 ### Disable RBAC
 
@@ -159,7 +146,7 @@ mainwebsite:
 ### Override Image Tags
 
 ```bash
-helm install mainwebsite . --set mainwebsite.image.tag=v1.2.3 --set metrics.image.tag=v2.0.0
+helm install mainwebsite . --set mainwebsite.image.tag=v1.2.3
 ```
 
 ### Add Custom Labels
@@ -185,7 +172,6 @@ kubectl describe pod <pod-name> -n production
 
 ```bash
 kubectl logs -f deployment/mainwebsite-mainwebsite -n production
-kubectl logs -f deployment/mainwebsite-metrics -n production
 ```
 
 ### Verify Services
@@ -242,12 +228,10 @@ helm-dir/
 ├── templates/
 │   ├── _helpers.tpl               # Template helpers
 │   ├── deployment.yaml            # Mainwebsite deployment
-│   ├── deployment-metrics.yaml    # Metrics deployment
-│   ├── service.yaml               # Services (mainwebsite + metrics)
+│   ├── service.yaml               # Service definition
 │   ├── ingress.yaml               # Traefik IngressRoute
 │   ├── servicemonitor.yaml        # Prometheus ServiceMonitor
 │   ├── hpa-mainwebsite.yaml      # Mainwebsite HPA
-│   ├── hpa-metrics.yaml          # Metrics HPA
 │   ├── serviceaccount.yaml        # ServiceAccount
 │   ├── clusterrole.yaml           # ClusterRole
 │   ├── clusterrolebinding.yaml    # ClusterRoleBinding

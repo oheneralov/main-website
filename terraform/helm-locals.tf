@@ -19,9 +19,7 @@ locals {
 
   environment_specific_helm_values = {
     "mainwebsite.replicaCount"        = local.env_config.replica_count_main
-    "metrics.replicaCount"            = local.env_config.replica_count_metrics
     "mainwebsite.image.tag"           = var.mainwebsite_image_tag
-    "metrics.image.tag"               = var.metrics_image_tag
     "mainwebsite.autoscaling.enabled" = local.env_config.enable_monitoring ? "true" : "false"
   }
 

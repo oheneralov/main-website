@@ -10,7 +10,6 @@ This Helm chart includes a comprehensive test suite that validates deployment co
 **Purpose**: Basic connectivity testing  
 **Tests**:
 - Mainwebsite service reachability
-- Metrics service reachability
 - HTTP response verification
 
 **Run**:
@@ -27,16 +26,7 @@ helm test mainwebsite -n production
 
 **Conditions**: Runs only if `mainwebsite.enabled: true`
 
-### 3. **test-metrics.yaml**
-**Purpose**: Metrics service connectivity  
-**Tests**:
-- Service DNS resolution
-- HTTP GET request to metrics pod
-- Service health status
-
-**Conditions**: Runs only if `metrics.enabled: true`
-
-### 4. **test-labels.yaml**
+### 3. **test-labels.yaml**
 **Purpose**: Verify Kubernetes labels and selectors  
 **Tests**:
 - Deployment label verification
@@ -52,7 +42,7 @@ helm test mainwebsite -n production
 - Component labels
 - Service-to-pod selector matching
 
-### 5. **test-rbac.yaml**
+### 4. **test-rbac.yaml**
 **Purpose**: Verify RBAC resource creation  
 **Tests**:
 - ServiceAccount exists
@@ -66,11 +56,10 @@ helm test mainwebsite -n production
 - ServiceAccount is bound to roles
 - Permissions are granted
 
-### 6. **test-hpa.yaml**
+### 5. **test-hpa.yaml**
 **Purpose**: Verify HorizontalPodAutoscaler configuration  
 **Tests**:
 - Mainwebsite HPA resource exists
-- Metrics HPA resource exists
 - HPA status and configuration
 
 **Conditions**: Runs only if autoscaling is enabled
@@ -78,14 +67,13 @@ helm test mainwebsite -n production
 **Verifies**:
 - HPA resources created correctly
 - Min/max replicas configured
-- Metrics targets configured
+- Autoscaling metric targets configured
 - HPA status shows ready
 
-### 7. **test-ingress.yaml**
+### 6. **test-ingress.yaml**
 **Purpose**: Verify Ingress/IngressRoute configuration  
 **Tests**:
 - Mainwebsite IngressRoute exists
-- Metrics IngressRoute exists
 - Hostname rules configured correctly
 
 **Conditions**: Runs only if `ingress.enabled: true`
@@ -96,22 +84,21 @@ helm test mainwebsite -n production
 - Service references are correct
 - EntryPoints configured
 
-### 8. **test-monitoring.yaml**
+### 7. **test-monitoring.yaml**
 **Purpose**: Verify Prometheus monitoring integration  
 **Tests**:
 - Mainwebsite ServiceMonitor exists
-- Metrics ServiceMonitor exists
-- Metrics paths and intervals configured
+- Scrape paths and intervals configured
 
 **Conditions**: Runs only if `monitoring.serviceMonitor.enabled: true`
 
 **Verifies**:
 - ServiceMonitor CRDs created
 - Prometheus scrape configuration
-- Metrics endpoints configured
+- Scrape endpoints configured
 - Label selectors match pods
 
-### 9. **test-resources.yaml**
+### 8. **test-resources.yaml**
 **Purpose**: Verify resource requests and limits  
 **Tests**:
 - CPU and memory limits configured
@@ -124,7 +111,7 @@ helm test mainwebsite -n production
 - Values applied correctly to pods
 - No resource conflicts
 
-### 10. **test-security.yaml**
+### 9. **test-security.yaml**
 **Purpose**: Verify security context configuration  
 **Tests**:
 - Pod security context applied
@@ -180,21 +167,19 @@ helm test
     ↓
 2. test-mainwebsite.yaml (mainwebsite service)
     ↓
-3. test-metrics.yaml (metrics service)
-    ↓
-4. test-labels.yaml (label verification)
-    ↓
-5. test-rbac.yaml (RBAC resources)
-    ↓
-6. test-hpa.yaml (autoscaling)
-    ↓
-7. test-ingress.yaml (ingress routing)
-    ↓
-8. test-monitoring.yaml (monitoring)
-    ↓
-9. test-resources.yaml (resource config)
-    ↓
-10. test-security.yaml (security context)
+3. test-labels.yaml (label verification)
+  ↓
+4. test-rbac.yaml (RBAC resources)
+  ↓
+5. test-hpa.yaml (autoscaling)
+  ↓
+6. test-ingress.yaml (ingress routing)
+  ↓
+7. test-monitoring.yaml (monitoring)
+  ↓
+8. test-resources.yaml (resource config)
+  ↓
+9. test-security.yaml (security context)
     ↓
 Result: PASS or FAIL
 ```
@@ -400,7 +385,7 @@ spec:
 
 | Component | Test | Coverage |
 |-----------|------|----------|
-| Deployments | ✓ test-mainwebsite.yaml, test-metrics.yaml | 100% |
+| Deployments | ✓ test-mainwebsite.yaml | 100% |
 | Services | ✓ test-connection.yaml | 100% |
 | Ingress | ✓ test-ingress.yaml | 100% |
 | HPA | ✓ test-hpa.yaml | 100% |

@@ -1,4 +1,4 @@
-# GCP Info Website - Helm Values
+# AWS Info Website - Helm Values
 # Default configuration for mainwebsite Helm chart
 
 # Global configuration
@@ -13,7 +13,7 @@ mainwebsite:
   replicaCount: 1
   
   image:
-    repository: gcr.io/clever-spirit-417020/mainwebsite
+    repository: 473587278533.dkr.ecr.us-east-1.amazonaws.com/mainwebsite
     pullPolicy: IfNotPresent
     tag: "latest"
   
@@ -67,58 +67,6 @@ mainwebsite:
   affinity: {}
   tolerations: []
 
-# Metrics Service Configuration
-metrics:
-  enabled: true
-  replicaCount: 1
-  
-  image:
-    repository: gcr.io/clever-spirit-417020/metrics
-    pullPolicy: IfNotPresent
-    tag: "latest"
-  
-  service:
-    type: ClusterIP
-    port: 80
-    targetPort: 3001
-  
-  resources:
-    limits:
-      cpu: 500m
-      memory: 256Mi
-    requests:
-      cpu: 250m
-      memory: 128Mi
-  
-  probes:
-    liveness:
-      httpGet:
-        path: /
-        port: http
-      initialDelaySeconds: 30
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-    
-    readiness:
-      httpGet:
-        path: /
-        port: http
-      initialDelaySeconds: 5
-      periodSeconds: 5
-      timeoutSeconds: 3
-      failureThreshold: 3
-  
-  autoscaling:
-    enabled: false
-    minReplicas: 1
-    maxReplicas: 2
-    targetCPUUtilizationPercentage: 80
-  
-  nodeSelector: {}
-  affinity: {}
-  tolerations: []
-
 # Service Account
 serviceAccount:
   create: true
@@ -147,11 +95,6 @@ ingress:
   
   mainwebsite:
     hostname: oleksandrdesign.com
-    entrypoint: web
-    middlewares: []
-  
-  metrics:
-    hostname: metrics.oleksandrdesign.com
     entrypoint: web
     middlewares: []
 

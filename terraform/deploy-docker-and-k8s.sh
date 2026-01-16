@@ -45,7 +45,6 @@ SKIP_K8S=false
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 MAINWEBSITE_DIR="$PROJECT_ROOT/mainwebsite"
-METRICS_DIR="$PROJECT_ROOT/metrics"
 
 ################################################################################
 # Helper Functions
@@ -365,13 +364,6 @@ main() {
             "$MAINWEBSITE_DIR")
         push_to_ecr "mainwebsite" "$MAINWEBSITE_IMAGE" "$ECR_REGISTRY"
         
-        # Build and push metrics service (if Dockerfile exists)
-        if [[ -f "$METRICS_DIR/Dockerfile" ]]; then
-            METRICS_IMAGE=$(build_docker_image "metrics" \
-                "$METRICS_DIR/Dockerfile" \
-                "$METRICS_DIR")
-            push_to_ecr "metrics" "$METRICS_IMAGE" "$ECR_REGISTRY"
-        fi
     else
         print_warning "Skipping Docker build and ECR push"
     fi

@@ -22,29 +22,5 @@ spec:
       app.kubernetes.io/component: mainwebsite
 {{- end }}
 
-{{- if .Values.metrics.enabled }}
-{{- if .Values.podDisruptionBudget.metrics }}
----
-apiVersion: policy/v1
-kind: PodDisruptionBudget
-metadata:
-  name: {{ include "helm-dir.fullname" . }}-metrics
-  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
-  labels:
-    {{- include "helm-dir.labels" . | nindent 4 }}
-    app.kubernetes.io/component: metrics
-spec:
-  {{- if .Values.podDisruptionBudget.metrics.minAvailable }}
-  minAvailable: {{ .Values.podDisruptionBudget.metrics.minAvailable }}
-  {{- end }}
-  {{- if .Values.podDisruptionBudget.metrics.maxUnavailable }}
-  maxUnavailable: {{ .Values.podDisruptionBudget.metrics.maxUnavailable }}
-  {{- end }}
-  selector:
-    matchLabels:
-      {{- include "helm-dir.selectorLabels" . | nindent 6 }}
-      app.kubernetes.io/component: metrics
-{{- end }}
-{{- end }}
 {{- end }}
 {{- end }}

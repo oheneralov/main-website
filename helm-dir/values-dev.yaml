@@ -25,24 +25,6 @@ mainwebsite:
   autoscaling:
     enabled: false
 
-metrics:
-  replicaCount: 1
-  
-  image:
-    tag: "dev-latest"
-    pullPolicy: Always
-  
-  resources:
-    limits:
-      cpu: 250m
-      memory: 128Mi
-    requests:
-      cpu: 100m
-      memory: 64Mi
-  
-  autoscaling:
-    enabled: false
-
 podSecurityContext:
   runAsNonRoot: false
   runAsUser: 1000
@@ -55,8 +37,6 @@ ingress:
   enabled: true
   mainwebsite:
     hostname: dev.oleksandrdesign.com
-  metrics:
-    hostname: metrics-dev.oleksandrdesign.com
 
 monitoring:
   serviceMonitor:

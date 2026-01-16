@@ -25,32 +25,6 @@ spec:
       {{- end }}
 {{- end }}
 
-{{- if .Values.metrics.enabled }}
----
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: {{ include "helm-dir.fullname" . }}-metrics
-  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
-  labels:
-    {{- include "helm-dir.labels" . | nindent 4 }}
-    app.kubernetes.io/component: metrics
-spec:
-  entryPoints:
-    - {{ .Values.ingress.metrics.entrypoint }}
-  routes:
-    - match: Host(`{{ .Values.ingress.metrics.hostname }}`)
-      kind: Rule
-      services:
-        - name: {{ include "helm-dir.fullname" . }}-metrics
-          port: {{ .Values.metrics.service.port }}
-      {{- if .Values.ingress.metrics.middlewares }}
-      middlewares:
-        {{- range .Values.ingress.metrics.middlewares }}
-        - name: {{ . }}
-        {{- end }}
-      {{- end }}
-{{- end }}
 {{- end }}
 
           

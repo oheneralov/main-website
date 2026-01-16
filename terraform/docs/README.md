@@ -21,7 +21,7 @@ Infrastructure-as-code configuration for deploying the AWS Info Website on Amazo
 
 - **EKS Cluster Provisioning**: Creates and configures an Amazon EKS cluster with Kubernetes control plane logging
 - **Multi-Environment Support**: Handles dev, staging, and production environments with environment-specific variables
-- **Helm Deployments**: Deploys the mainwebsite and associated services using Helm charts
+- **Helm Deployments**: Deploys the mainwebsite service using Helm charts
 - **State Management**: Configurable remote state storage in AWS S3
 - **Infrastructure Automation**: Fully reproducible infrastructure deployments
 
@@ -32,8 +32,7 @@ AWS Account
 ├── EKS Cluster (provisioned by Terraform)
 │   ├── Kubernetes Namespace (configurable)
 │   └── Helm Releases
-│       ├── mainwebsite (primary application)
-│       └── metrics (monitoring service)
+│       └── mainwebsite (primary application)
 ├── S3 (Terraform state backend)
 └── Other AWS Resources (configured as needed)
 ```

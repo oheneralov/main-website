@@ -19,17 +19,11 @@ phases:
       - docker build -t mainwebsite:$CODEBUILD_RESOLVED_SOURCE_VERSION ./mainwebsite
       - docker tag mainwebsite:$CODEBUILD_RESOLVED_SOURCE_VERSION $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/aws-info-website:$CODEBUILD_RESOLVED_SOURCE_VERSION
       - docker tag mainwebsite:$CODEBUILD_RESOLVED_SOURCE_VERSION $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/aws-info-website:latest
-      - echo "Building metrics service..."
-      - docker build -t metrics:$CODEBUILD_RESOLVED_SOURCE_VERSION ./metrics
-      - docker tag metrics:$CODEBUILD_RESOLVED_SOURCE_VERSION $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/metrics:$CODEBUILD_RESOLVED_SOURCE_VERSION
-      - docker tag metrics:$CODEBUILD_RESOLVED_SOURCE_VERSION $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/metrics:latest
   post_build:
     commands:
       - echo "Pushing Docker images to ECR..."
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/aws-info-website:$CODEBUILD_RESOLVED_SOURCE_VERSION
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/aws-info-website:latest
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/metrics:$CODEBUILD_RESOLVED_SOURCE_VERSION
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/metrics:latest
       - printf '[{"name":"mainwebsite","imageUri":"%s"}]' $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/aws-info-website:$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json
 
 artifacts:
@@ -42,4 +36,3 @@ cache:
   paths:
     - '/root/.npm/**/*'
     - 'mainwebsite/node_modules/**/*'
-    - 'metrics/node_modules/**/*'

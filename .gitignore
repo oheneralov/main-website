@@ -4,7 +4,6 @@ terraform\terraform.tfvars
 __pycache__/
 node_modules/
 mainwebsite/node_modules/
-metrics/node_modules/
 dist/
 build/
 .DS_Store

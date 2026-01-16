@@ -8,7 +8,6 @@ This is a full-stack application that combines:
 - **Backend**: NestJS API server with TypeScript
 - **Frontend**: React application with Vite
 - **Infrastructure**: Kubernetes (Helm), Terraform, and Docker
-- **Metrics**: Prometheus metrics collection service
 - **CI/CD**: Jenkins pipelines for build, validation, and deployment
 - **Design**: Responsive web design with Pug templates and SCSS
 
@@ -17,7 +16,6 @@ This is a full-stack application that combines:
 ```
 ├── mainwebsite/           # Main NestJS backend + React frontend
 ├── design/                # Static design assets and templates
-├── metrics/               # Prometheus metrics service
 ├── helm-dir/              # Kubernetes Helm charts
 ├── terraform/             # Infrastructure as Code (Terraform)
 ├── Jenkinsfile.*          # CI/CD pipeline definitions
@@ -43,8 +41,6 @@ This is a full-stack application that combines:
 2. **Install dependencies**
    ```bash
    cd mainwebsite
-   npm install
-   cd ../metrics
    npm install
    ```
 
@@ -97,12 +93,6 @@ Infrastructure as Code for AWS/cloud resources.
 
 See [SETUP.md](terraform/SETUP.md) and [TROUBLESHOOTING.md](terraform/TROUBLESHOOTING.md).
 
-### `/metrics`
-Prometheus metrics collection and monitoring service.
-
-- `index.js`: Node.js metrics server
-- `package.json`: Dependencies
-
 ## 🐳 Docker
 
 Build and run containerized services:
@@ -110,12 +100,98 @@ Build and run containerized services:
 ```bash
 # Build Docker images
 docker build -t mainwebsite:latest ./mainwebsite
-docker build -t metrics:latest ./metrics
 
 # Run containers
-docker run -p 3000:3000 mainwebsite:latest
-docker run -p 9090:9090 metrics:latest
+docker run -p 3000:80 mainwebsite:latest
 ```
+
+### Manually Push Images to Amazon ECR
+
+Use these steps when you need to build and push the Docker images yourself (for example, ahead of a Terraform apply or when CI is unavailable). Commands are provided for both Bash (macOS/Linux) and PowerShell (Windows).
+
+**0. Create the ECR repositories (run once per account/region)**
+
+_Bash_
+```bash
+aws ecr create-repository \
+  --repository-name mainwebsite \
+  --image-scanning-configuration scanOnPush=true \
+  --region us-east-1
+```
+
+_PowerShell_
+```powershell
+aws ecr create-repository `
+  --repository-name mainwebsite `
+  --image-scanning-configuration scanOnPush=true `
+  --region $Env:AWS_REGION
+```
+
+**1. Define environment variables**
+
+_Bash_
+```bash
+export AWS_REGION=us-east-1
+export AWS_ACCOUNT_ID=123456789012            # replace with your account
+export ECR_REGISTRY=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+```
+
+_PowerShell_
+```powershell
+$Env:AWS_REGION = "us-east-1"
+$Env:AWS_ACCOUNT_ID = "123456789012"        # replace with your account
+$Env:ECR_REGISTRY = "$($Env:AWS_ACCOUNT_ID).dkr.ecr.$($Env:AWS_REGION).amazonaws.com"
+```
+
+**2. Authenticate Docker to ECR** (requires AWS CLI v2 configured with credentials)
+
+_Bash_
+```bash
+aws ecr get-login-password --region ${AWS_REGION} \
+  | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+```
+
+_PowerShell_
+```powershell
+aws ecr get-login-password --region $Env:AWS_REGION | docker login --username AWS --password-stdin $Env:ECR_REGISTRY
+```
+
+_PowerShell fallback (avoids piping issues)_
+```powershell
+docker logout $Env:ECR_REGISTRY
+$password = aws ecr get-login-password --region $Env:AWS_REGION
+docker login --username AWS --password $password $Env:ECR_REGISTRY
+```
+
+**3. Build and tag the images**
+
+_Bash_
+```bash
+docker build -t mainwebsite:dev-latest ./mainwebsite
+docker tag mainwebsite:dev-latest ${ECR_REGISTRY}/mainwebsite:dev-latest
+```
+
+_PowerShell_
+```powershell
+docker build -t mainwebsite:dev-latest ./mainwebsite
+docker tag mainwebsite:dev-latest "$Env:ECR_REGISTRY/mainwebsite:dev-latest"
+```
+
+> ℹ️ PowerShell does **not** understand the `${VAR}` syntax shown in the Bash examples. Always reference environment variables as `$Env:VAR` (for example, `$Env:ECR_REGISTRY/mainwebsite:dev-latest`).
+
+**4. Push the tags to ECR**
+
+_Bash_
+```bash
+docker push ${ECR_REGISTRY}/mainwebsite:dev-latest
+```
+
+_PowerShell_
+```powershell
+docker push "$Env:ECR_REGISTRY/mainwebsite:dev-latest"
+```
+
+Use environment-specific tags (`staging-latest`, `1.0.0`, etc.) to match the values referenced in Helm (`mainwebsite.image.tag`).
 
 ## ☸️ Kubernetes Deployment
 
@@ -132,6 +208,16 @@ helm install aws-info-website ./helm-dir -f helm-dir/values-prod.yaml    # Produ
 
 # Upgrade deployment
 helm upgrade aws-info-website ./helm-dir -f helm-dir/values-prod.yaml
+
+# List Helm releases (current namespace)
+helm list
+
+# List releases in a specific namespace (example)
+helm list -n development
+
+# Uninstall the release (add -n if you deployed outside default)
+helm uninstall aws-info-website
+
 ```
 
 ## 🔄 CI/CD Pipeline
@@ -272,6 +358,9 @@ View logs in CloudWatch:
 - CodeBuild logs: `/aws/codebuild/aws-info-website-build`
 - CodeDeploy logs: `/aws/codedeploy/aws-info-website`
 
+# Check images
+aws ecr describe-images --repository-name mainwebsite  --image-ids imageTag=dev-latest  --region us-east-1
+
 ### Environment-Specific Deployments
 
 For staging and production:
@@ -322,7 +411,6 @@ npm run build          # Build for production
 
 ## 📊 Monitoring
 
-- **Metrics Service**: Prometheus-compatible metrics on port 9090
 - **Health Checks**: Service health endpoints configured in Helm charts
 - **Logging**: Centralized logging service in backend
 

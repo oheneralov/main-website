@@ -29,33 +29,4 @@ spec:
 
 ---
 
-{{- if .Values.metrics.enabled }}
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "helm-dir.fullname" . }}-metrics
-  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
-  labels:
-    {{- include "helm-dir.labels" . | nindent 4 }}
-    app.kubernetes.io/component: metrics
-  {{- with .Values.global.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-spec:
-  type: {{ .Values.metrics.service.type }}
-  selector:
-    {{- include "helm-dir.selectorLabels" . | nindent 4 }}
-    app.kubernetes.io/component: metrics
-  ports:
-  - name: http
-    protocol: TCP
-    port: {{ .Values.metrics.service.port }}
-    targetPort: http
-  - name: metrics
-    protocol: TCP
-    port: 3001
-    targetPort: metrics
-{{- end }}
-
 

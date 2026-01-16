@@ -185,9 +185,7 @@ Build and push Docker images without deploying to Kubernetes:
 
 ### Docker Image Building
 
-- Builds Docker images from Dockerfiles in:
-  - `mainwebsite/Dockerfile`
-  - `metrics/Dockerfile` (if exists)
+- Builds Docker images from `mainwebsite/Dockerfile`
 - Tags images with `:latest`
 - Creates timestamped tags (e.g., `20240113-143025`)
 
@@ -410,7 +408,7 @@ docker pull 123456789012.dkr.ecr.us-east-1.amazonaws.com/mainwebsite:20240113-14
 3. **Test in dev first**: Always validate changes in development before production
 4. **Namespace isolation**: Use different namespaces for different environments
 5. **Image versioning**: Use specific image tags in production, not just `:latest`
-6. **Monitoring**: Verify deployments with pod logs and metrics
+6. **Monitoring**: Verify deployments with pod logs and resource usage
 7. **Git workflows**: Use branches and pull requests for infrastructure changes
 8. **Documentation**: Keep deployment runbooks updated
 

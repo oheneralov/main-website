@@ -193,18 +193,6 @@ variable "mainwebsite_image_tag" {
   }
 }
 
-variable "metrics_image_tag" {
-  description = "Docker image tag for the metrics service"
-  type        = string
-  default     = "latest"
-  nullable    = false
-
-  validation {
-    condition     = length(var.metrics_image_tag) > 0
-    error_message = "Image tag must not be empty."
-  }
-}
-
 ################################################################################
 # Optional: Labels and Tags
 ################################################################################

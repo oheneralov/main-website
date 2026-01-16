@@ -39,26 +39,6 @@ spec:
           echo "✓ Read-only Root Filesystem: $READ_ONLY"
           {{- end }}
           
-          {{- if .Values.metrics.enabled }}
-          echo "Checking metrics security context..."
-          METRICS_POD=$(kubectl get pods -n {{ .Values.global.namespace | default .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=metrics -o jsonpath='{.items[0].metadata.name}')
-          
-          if [ -z "$METRICS_POD" ]; then
-            echo "✗ No metrics pods found"
-            exit 1
-          fi
-          
-          # Check running user
-          RUN_AS_USER=$(kubectl get pod $METRICS_POD -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.spec.securityContext.runAsUser}')
-          echo "✓ Running as User ID: $RUN_AS_USER"
-          
-          # Check container security
-          ALLOW_PRIV=$(kubectl get pod $METRICS_POD -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.spec.containers[0].securityContext.allowPrivilegeEscalation}')
-          READ_ONLY=$(kubectl get pod $METRICS_POD -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.spec.containers[0].securityContext.readOnlyRootFilesystem}')
-          echo "✓ Allow Privilege Escalation: $ALLOW_PRIV"
-          echo "✓ Read-only Root Filesystem: $READ_ONLY"
-          {{- end }}
-          
           echo "✓ All security contexts verified"
           exit 0
   restartPolicy: Never

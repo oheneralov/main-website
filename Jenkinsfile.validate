@@ -21,25 +21,9 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies - Metrics') {
-            steps {
-                dir('metrics') {
-                    sh 'npm install'
-                }
-            }
-        }
-
         stage('Lint - Main Website') {
             steps {
                 dir('mainwebsite') {
-                    sh 'npm run lint || true'
-                }
-            }
-        }
-
-        stage('Lint - Metrics') {
-            steps {
-                dir('metrics') {
                     sh 'npm run lint || true'
                 }
             }
@@ -61,20 +45,12 @@ pipeline {
             }
         }
 
-        stage('Unit Tests - Metrics') {
-            steps {
-                dir('metrics') {
-                    sh 'npm test'
-                }
-            }
-        }
 
         stage('Security Scan - OWASP Dependency-Check') {
             steps {
                 script {
                     sh '''
                         dependency-check --project "mainwebsite" --scan mainwebsite/node_modules --format JSON --out mainwebsite-dependency-check.json || true
-                        dependency-check --project "metrics" --scan metrics/node_modules --format JSON --out metrics-dependency-check.json || true
                     '''
                 }
             }
@@ -93,7 +69,6 @@ pipeline {
                 script {
                     sh '''
                         hadolint mainwebsite/Dockerfile || true
-                        hadolint metrics/Dockerfile || true
                     '''
                 }
             }

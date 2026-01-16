@@ -34,20 +34,6 @@ spec:
           fi
           {{- end }}
           
-          {{- if .Values.metrics.enabled }}
-          echo "Checking metrics ServiceMonitor..."
-          kubectl get servicemonitor {{ include "helm-dir.fullname" . }}-metrics -n {{ .Values.global.namespace | default .Release.Namespace }}
-          if [ $? -eq 0 ]; then
-            echo "✓ Metrics ServiceMonitor found"
-            INTERVAL=$(kubectl get servicemonitor {{ include "helm-dir.fullname" . }}-metrics -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.spec.endpoints[0].interval}')
-            PATH=$(kubectl get servicemonitor {{ include "helm-dir.fullname" . }}-metrics -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.spec.endpoints[0].path}')
-            echo "  Interval: $INTERVAL, Path: $PATH"
-          else
-            echo "✗ Metrics ServiceMonitor not found"
-            exit 1
-          fi
-          {{- end }}
-          
           echo "✓ All monitoring resources verified"
           exit 0
   restartPolicy: Never

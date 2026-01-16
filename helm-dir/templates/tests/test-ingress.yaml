@@ -33,19 +33,6 @@ spec:
           fi
           {{- end }}
           
-          {{- if .Values.metrics.enabled }}
-          echo "Checking metrics IngressRoute..."
-          kubectl get ingressroute {{ include "helm-dir.fullname" . }}-metrics -n {{ .Values.global.namespace | default .Release.Namespace }}
-          if [ $? -eq 0 ]; then
-            echo "✓ Metrics IngressRoute found"
-            HOSTNAME=$(kubectl get ingressroute {{ include "helm-dir.fullname" . }}-metrics -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.spec.routes[0].match}')
-            echo "  Hostname rule: $HOSTNAME"
-          else
-            echo "✗ Metrics IngressRoute not found"
-            exit 1
-          fi
-          {{- end }}
-          
           echo "✓ All Ingress resources verified"
           exit 0
   restartPolicy: Never

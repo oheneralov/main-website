@@ -41,27 +41,8 @@ mainwebsite:
               values:
               - mainwebsite
           topologyKey: kubernetes.io/hostname
-
-metrics:
-  replicaCount: 2
-  
-  image:
-    tag: "1.0.0"  # Use explicit version tags in production
-    pullPolicy: IfNotPresent
-  
-  resources:
-    limits:
-      cpu: 500m
-      memory: 384Mi
-    requests:
-      cpu: 250m
-      memory: 192Mi
-  
-  autoscaling:
-    enabled: true
-    minReplicas: 2
-    maxReplicas: 5
-    targetCPUUtilizationPercentage: 75
+  nodeSelector:
+    workload-type: application
 
 podSecurityContext:
   runAsNonRoot: true
@@ -81,8 +62,6 @@ ingress:
   enabled: true
   mainwebsite:
     hostname: oleksandrdesign.com
-  metrics:
-    hostname: metrics.oleksandrdesign.com
 
 monitoring:
   enabled: true
@@ -90,19 +69,8 @@ monitoring:
     enabled: true
     interval: 30s
 
-# Production-grade node selection
-mainwebsite:
-  nodeSelector:
-    workload-type: application
-
-metrics:
-  nodeSelector:
-    workload-type: monitoring
-
 # Pod Disruption Budgets for high availability
 podDisruptionBudget:
   enabled: true
   mainwebsite:
     minAvailable: 2
-  metrics:
-    minAvailable: 1

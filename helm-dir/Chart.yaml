@@ -1,6 +1,6 @@
 apiVersion: v2
 name: mainwebsite
-description: GCP-based website with multi-service architecture (main website + metrics service)
+description: GCP-based website with a single-service mainwebsite deployment
 type: application
 
 # Chart version - increment with template changes

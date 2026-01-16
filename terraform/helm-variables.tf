@@ -47,7 +47,7 @@ variable "helm_release_name" {
 variable "helm_timeout" {
   description = "Timeout for Helm deployment in seconds"
   type        = number
-  default     = 300
+  default     = 900
   nullable    = false
 
   validation {
@@ -225,6 +225,19 @@ variable "traefik_crd_version" {
   type        = string
   default     = "30.0.0" # Adjust based on your needs
   nullable    = false
+}
+
+variable "install_prometheus_crds" {
+  description = "Whether to install Prometheus Operator CRDs (ServiceMonitor, PodMonitor, etc.)"
+  type        = bool
+  default     = true
+  nullable    = false
+}
+
+variable "prometheus_crd_chart_version" {
+  description = "Version of the prometheus-operator-crds chart to install (null = latest)"
+  type        = string
+  default     = null
 }
 ################################################################################
 # Kubernetes Deployment Control

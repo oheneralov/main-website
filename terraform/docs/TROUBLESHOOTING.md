@@ -771,7 +771,7 @@ terraform apply -var-file="environments/dev.tfvars"
 kubectl get all -n production
 kubectl get events -n production
 
-# Check metrics
+# Check resource usage
 kubectl top pods -n production
 ```
 

@@ -53,7 +53,6 @@ output "helm_values" {
     environment_config = local.env_config
     image_tags = {
       mainwebsite = var.mainwebsite_image_tag
-      metrics     = var.metrics_image_tag
     }
   }
   sensitive = true

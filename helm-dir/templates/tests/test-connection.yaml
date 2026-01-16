@@ -28,14 +28,5 @@ spec:
           echo ""
           {{- end }}
           
-          {{- if .Values.metrics.enabled }}
-          echo "Testing metrics service..."
-          curl -v http://{{ include "helm-dir.fullname" . }}-metrics:{{ .Values.metrics.service.port }}/ 2>&1 | head -20
-          if [ $? -eq 0 ]; then
-            echo "✓ Metrics connectivity test passed"
-          fi
-          echo ""
-          {{- end }}
-          
           echo "✓ Basic connectivity tests completed"
   restartPolicy: Never

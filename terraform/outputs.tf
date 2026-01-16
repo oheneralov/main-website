@@ -78,11 +78,6 @@ output "mainwebsite_image_tag" {
   value       = var.mainwebsite_image_tag
 }
 
-output "metrics_image_tag" {
-  description = "Docker image tag for metrics service"
-  value       = var.metrics_image_tag
-}
-
 ################################################################################
 # Useful Commands & Information
 ################################################################################

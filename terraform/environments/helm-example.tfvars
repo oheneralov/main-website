@@ -70,15 +70,12 @@ helm_debug             = false # Disable debug logging
 helm_set_values = {
   # Replica counts (automatically set by locals based on environment)
   # "mainwebsite.replicaCount"        = "1"
-  # "metrics.replicaCount"            = "1"
 
   # Image tags (set via dedicated variables below)
   # "mainwebsite.image.tag"           = "latest"
-  # "metrics.image.tag"               = "latest"
 
   # Enable/disable components
   "mainwebsite.autoscaling.enabled" = "false"
-  "metrics.autoscaling.enabled"     = "false"
 
   # Custom settings
   # "mainwebsite.service.type"        = "LoadBalancer"
@@ -110,7 +107,6 @@ helm_values_files = [
 ################################################################################
 
 mainwebsite_image_tag = "latest"
-metrics_image_tag     = "latest"
 
 ################################################################################
 # Helm Repository Configuration (for remote charts - optional)
