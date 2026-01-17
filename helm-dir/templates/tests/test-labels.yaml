@@ -3,7 +3,6 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: "{{ include "helm-dir.fullname" . }}-test-mainwebsite-labels"
-  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
     {{- include "helm-dir.labels" . | nindent 4 }}
     app.kubernetes.io/component: mainwebsite
@@ -22,14 +21,14 @@ spec:
           echo "Verifying mainwebsite deployment labels and selectors..."
           
           # Check deployment exists
-          kubectl get deployment {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Values.global.namespace | default .Release.Namespace }}
+          kubectl get deployment {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Release.Namespace }}
           if [ $? -ne 0 ]; then
             echo "✗ Mainwebsite deployment not found"
             exit 1
           fi
           
           # Check pods have correct labels
-          POD_COUNT=$(kubectl get pods -n {{ .Values.global.namespace | default .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=mainwebsite --no-headers | wc -l)
+          POD_COUNT=$(kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=mainwebsite --no-headers | wc -l)
           if [ "$POD_COUNT" -gt 0 ]; then
             echo "✓ Found $POD_COUNT mainwebsite pod(s) with correct labels"
           else
@@ -38,7 +37,7 @@ spec:
           fi
           
           # Check service has correct selector
-          SERVICE_SELECTOR=$(kubectl get svc {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.spec.selector}')
+          SERVICE_SELECTOR=$(kubectl get svc {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Release.Namespace }} -o jsonpath='{.spec.selector}')
           echo "✓ Service selector: $SERVICE_SELECTOR"
           
           exit 0

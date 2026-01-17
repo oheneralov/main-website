@@ -44,7 +44,7 @@ securityContext:
 ingress:
   enabled: true
   mainwebsite:
-    hostname: staging.oleksandrdesign.com
+    hostname: staging.oleksandrgeneralov.com
 
 monitoring:
   enabled: true

@@ -62,7 +62,7 @@ Three pre-configured environment values files are provided:
 - Development image tags (`dev-latest`)
 - Reduced resource requests
 - Autoscaling disabled
-- Dev domain names (dev.oleksandrdesign.com)
+- Dev domain names (dev.oleksandrgeneralov.com)
 - Enhanced SecurityContext for development
 
 #### `values-staging.yaml`

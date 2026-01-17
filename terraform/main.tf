@@ -1,4 +1,17 @@
 ################################################################################
+# Networking helpers
+################################################################################
+
+data "http" "terraform_client_ip" {
+  count = var.cluster_endpoint_public_access && length(var.cluster_endpoint_public_access_cidrs) == 0 ? 1 : 0
+  url   = "https://checkip.amazonaws.com/"
+}
+
+locals {
+  detected_public_cidr = length(data.http.terraform_client_ip) > 0 ? format("%s/32", chomp(data.http.terraform_client_ip[0].response_body)) : null
+}
+
+################################################################################
 # EKS Cluster Creation
 ################################################################################
 
@@ -12,7 +25,7 @@ resource "aws_eks_cluster" "main" {
     subnet_ids              = var.subnet_ids
     endpoint_private_access = true
     endpoint_public_access  = var.cluster_endpoint_public_access
-    public_access_cidrs     = var.cluster_endpoint_public_access_cidrs
+    public_access_cidrs     = local.eks_cluster_public_access_cidrs
     security_group_ids      = var.cluster_security_group_ids
   }
 
@@ -141,10 +154,11 @@ resource "aws_iam_role_policy_attachment" "eks_container_registry_policy" {
 ################################################################################
 
 locals {
-  eks_cluster_name     = aws_eks_cluster.main.name
-  eks_cluster_endpoint = aws_eks_cluster.main.endpoint
-  eks_cluster_ca_data  = aws_eks_cluster.main.certificate_authority[0].data
-  eks_cluster_arn      = aws_eks_cluster.main.arn
+  eks_cluster_name                  = aws_eks_cluster.main.name
+  eks_cluster_endpoint              = aws_eks_cluster.main.endpoint
+  eks_cluster_ca_data               = aws_eks_cluster.main.certificate_authority[0].data
+  eks_cluster_arn                   = aws_eks_cluster.main.arn
+  eks_cluster_public_access_cidrs   = var.cluster_endpoint_public_access ? (length(var.cluster_endpoint_public_access_cidrs) > 0 ? var.cluster_endpoint_public_access_cidrs : compact([local.detected_public_cidr])) : []
 }
 
 provider "kubernetes" { # Configure the Kubernetes provider to interact with the EKS cluster

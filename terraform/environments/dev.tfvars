@@ -19,9 +19,9 @@ subnet_ids = [
 # Optional: Security Groups (leave empty for default)
 cluster_security_group_ids = []
 
-# Cluster endpoint access
+# Cluster endpoint access (auto-detects caller IP when CIDRs left empty)
 cluster_endpoint_public_access       = true
-cluster_endpoint_public_access_cidrs = ["0.0.0.0/0"] # Restrict this in production!
+cluster_endpoint_public_access_cidrs = ["212.180.201.92/32"]
 
 # Cluster logging
 cluster_log_types = ["api", "audit", "authenticator"]

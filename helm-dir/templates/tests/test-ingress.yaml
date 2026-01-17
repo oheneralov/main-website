@@ -3,7 +3,6 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: "{{ include "helm-dir.fullname" . }}-test-ingress"
-  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
     {{- include "helm-dir.labels" . | nindent 4 }}
   annotations:
@@ -22,10 +21,10 @@ spec:
           
           {{- if .Values.mainwebsite.enabled }}
           echo "Checking mainwebsite IngressRoute..."
-          kubectl get ingressroute {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Values.global.namespace | default .Release.Namespace }}
+          kubectl get ingressroute {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Release.Namespace }}
           if [ $? -eq 0 ]; then
             echo "✓ Mainwebsite IngressRoute found"
-            HOSTNAME=$(kubectl get ingressroute {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.spec.routes[0].match}')
+            HOSTNAME=$(kubectl get ingressroute {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Release.Namespace }} -o jsonpath='{.spec.routes[0].match}')
             echo "  Hostname rule: $HOSTNAME"
           else
             echo "✗ Mainwebsite IngressRoute not found"

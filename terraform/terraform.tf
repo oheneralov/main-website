@@ -16,6 +16,10 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 2.10"
     }
+    http = {
+      source  = "hashicorp/http"
+      version = "~> 3.4"
+    }
   }
 
   # Remote state management in Amazon S3

@@ -78,15 +78,22 @@ variable "cluster_security_group_ids" {
 variable "cluster_endpoint_public_access" {
   description = "Enable public access to the EKS cluster endpoint"
   type        = bool
-  default     = true
+  default     = false
   nullable    = false
 }
 
 variable "cluster_endpoint_public_access_cidrs" {
   description = "List of CIDR blocks that can access the public EKS endpoint"
   type        = list(string)
-  default     = ["0.0.0.0/0"]
+  default     = []
   nullable    = false
+
+  validation {
+    condition = alltrue([
+      for cidr in var.cluster_endpoint_public_access_cidrs : !contains(["0.0.0.0/0", "::/0"], cidr)
+    ])
+    error_message = "Public CIDRs cannot be set to 0.0.0.0/0 or ::/0."
+  }
 }
 
 variable "cluster_log_types" {

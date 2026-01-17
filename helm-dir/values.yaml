@@ -3,7 +3,6 @@
 
 # Global configuration
 global:
-  namespace: default
   labels: {}
   annotations: {}
 
@@ -91,7 +90,7 @@ ingress:
   className: traefik
   
   mainwebsite:
-    hostname: oleksandrdesign.com
+    hostname: oleksandrgeneralov.com
     entrypoint: web
     middlewares: []
 
@@ -125,7 +124,11 @@ rbac:
 volumes:
   - name: nginx-cache
     emptyDir: {}
+  - name: nginx-run
+    emptyDir: {}
 volumeMounts:
   - name: nginx-cache
     mountPath: /var/cache/nginx
+  - name: nginx-run
+    mountPath: /run
 

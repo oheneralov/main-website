@@ -3,7 +3,6 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: "{{ include "helm-dir.fullname" . }}-test-monitoring"
-  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
     {{- include "helm-dir.labels" . | nindent 4 }}
   annotations:
@@ -22,11 +21,11 @@ spec:
           
           {{- if .Values.mainwebsite.enabled }}
           echo "Checking mainwebsite ServiceMonitor..."
-          kubectl get servicemonitor {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Values.global.namespace | default .Release.Namespace }}
+          kubectl get servicemonitor {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Release.Namespace }}
           if [ $? -eq 0 ]; then
             echo "✓ Mainwebsite ServiceMonitor found"
-            INTERVAL=$(kubectl get servicemonitor {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.spec.endpoints[0].interval}')
-            PATH=$(kubectl get servicemonitor {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Values.global.namespace | default .Release.Namespace }} -o jsonpath='{.spec.endpoints[0].path}')
+            INTERVAL=$(kubectl get servicemonitor {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Release.Namespace }} -o jsonpath='{.spec.endpoints[0].interval}')
+            PATH=$(kubectl get servicemonitor {{ include "helm-dir.fullname" . }}-mainwebsite -n {{ .Release.Namespace }} -o jsonpath='{.spec.endpoints[0].path}')
             echo "  Interval: $INTERVAL, Path: $PATH"
           else
             echo "✗ Mainwebsite ServiceMonitor not found"

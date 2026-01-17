@@ -4,7 +4,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ include "helm-dir.fullname" . }}-mainwebsite
-  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
     {{- include "helm-dir.labels" . | nindent 4 }}
     app.kubernetes.io/component: mainwebsite

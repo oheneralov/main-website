@@ -356,7 +356,6 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: "{{ include "helm-dir.fullname" . }}-test-feature"
-  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
     {{- include "helm-dir.labels" . | nindent 4 }}
   annotations:

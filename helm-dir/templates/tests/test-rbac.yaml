@@ -3,7 +3,6 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: "{{ include "helm-dir.fullname" . }}-test-rbac"
-  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
     {{- include "helm-dir.labels" . | nindent 4 }}
   annotations:
@@ -22,7 +21,7 @@ spec:
           
           # Check ServiceAccount
           echo "Checking ServiceAccount..."
-          kubectl get serviceaccount {{ include "helm-dir.serviceAccountName" . }} -n {{ .Values.global.namespace | default .Release.Namespace }}
+          kubectl get serviceaccount {{ include "helm-dir.serviceAccountName" . }} -n {{ .Release.Namespace }}
           if [ $? -eq 0 ]; then
             echo "✓ ServiceAccount found"
           else

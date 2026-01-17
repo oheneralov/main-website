@@ -200,6 +200,8 @@ Deploy to Kubernetes cluster using Helm:
 ```bash
 # Add Helm repository (if applicable)
 helm repo add <repo-name> <repo-url>
+helm install traefik traefik/traefik   -n traefik  --create-namespace  --set service.type=LoadBalancer
+
 
 # Deploy to different environments
 helm install aws-info-website ./helm-dir -f helm-dir/values-dev.yaml    # Dev
@@ -218,6 +220,9 @@ helm list -n development
 
 # Uninstall the release (add -n if you deployed outside default)
 helm uninstall aws-info-website
+
+# load balancer ip
+kubectl get svc -n traefik
 
 ```
 
@@ -410,9 +415,18 @@ npm run build          # Build for production
 - **Contact Form**: Mail form with PHP backend for inquiries
 
 ## 📊 Monitoring
+```bash
+kubectl get ingressroute aws-info-website-mainwebsite-mainwebsite -n development
+kubectl get svc -A | findstr traefik
+```
 
 - **Health Checks**: Service health endpoints configured in Helm charts
 - **Logging**: Centralized logging service in backend
+
+> ⚠️ Traefik must expose a `LoadBalancer` service so external traffic can reach the ingress controller.
+```bash
+helm upgrade traefik traefik/traefik -n traefik --set service.type=LoadBalancer
+```
 
 ## 📝 Configuration Files
 

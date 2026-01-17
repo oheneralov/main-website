@@ -4,7 +4,6 @@ apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: {{ include "helm-dir.fullname" . }}-mainwebsite
-  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
   labels:
     {{- include "helm-dir.labels" . | nindent 4 }}
     app.kubernetes.io/component: mainwebsite

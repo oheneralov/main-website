@@ -61,7 +61,7 @@ securityContext:
 ingress:
   enabled: true
   mainwebsite:
-    hostname: oleksandrdesign.com
+    hostname: oleksandrgeneralov.com
 
 monitoring:
   enabled: true
