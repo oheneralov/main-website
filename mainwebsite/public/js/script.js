@@ -24,7 +24,6 @@
 		isSafari = navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1,
 		isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
 		isTouch = "ontouchstart" in window,
-		onloadCaptchaCallback,
 		windowReady = false,
 		isNoviBuilder = false,
 
@@ -32,7 +31,6 @@
 			bootstrapModalDialog: $('.modal'),
 			bootstrapTooltip: $("[data-bs-toggle='tooltip']"),
 			campaignMonitor: $('.campaign-mailform'),
-			captcha: $('.recaptcha'),
 			checkbox: $("input[type='checkbox']"),
 			counter: $(".counter"),
 			customToggle: $("[data-custom-toggle]"),
@@ -383,7 +381,7 @@
 		 * isValidated
 		 * @description  check if all elemnts pass validation
 		 */
-		function isValidated(elements, captcha) {
+		function isValidated(elements) {
 			var results, errors = 0;
 
 			if (elements.length) {
@@ -397,12 +395,6 @@
 						}
 					} else {
 						$input.siblings(".form-validation").text("").parent().removeClass("has-error")
-					}
-				}
-
-				if (captcha) {
-					if (captcha.length) {
-						return validateReCaptcha(captcha) && errors == 0
 					}
 				}
 
@@ -442,74 +434,7 @@
 			lazyInit(plugins.maps, initMaps);
 		}
 
-		/**
-		 * validateReCaptcha
-		 * @description  validate google reCaptcha
-		 */
-		function validateReCaptcha(captcha) {
-			var $captchaToken = captcha.find('.g-recaptcha-response').val();
 
-			if ($captchaToken == '') {
-				captcha
-					.siblings('.form-validation')
-					.html('Please, prove that you are not robot.')
-					.addClass('active');
-				captcha
-					.closest('.form-group')
-					.addClass('has-error');
-
-				captcha.bind('propertychange', function () {
-					var $this = $(this),
-						$captchaToken = $this.find('.g-recaptcha-response').val();
-
-					if ($captchaToken != '') {
-						$this
-							.closest('.form-group')
-							.removeClass('has-error');
-						$this
-							.siblings('.form-validation')
-							.removeClass('active')
-							.html('');
-						$this.unbind('propertychange');
-					}
-				});
-
-				return false;
-			}
-
-			return true;
-		}
-
-		/**
-		 * onloadCaptchaCallback
-		 * @description  init google reCaptcha
-		 */
-		onloadCaptchaCallback = function () {
-			for (i = 0; i < plugins.captcha.length; i++) {
-				var $capthcaItem = $(plugins.captcha[i]);
-
-				grecaptcha.render(
-					$capthcaItem.attr('id'),
-					{
-						sitekey: $capthcaItem.attr('data-sitekey'),
-						size: $capthcaItem.attr('data-size') ? $capthcaItem.attr('data-size') : 'normal',
-						theme: $capthcaItem.attr('data-theme') ? $capthcaItem.attr('data-theme') : 'light',
-						callback: function (e) {
-							$('.recaptcha').trigger('propertychange');
-						}
-					}
-				);
-				$capthcaItem.after("<span class='form-validation'></span>");
-			}
-		};
-
-		/**
-		 * Google ReCaptcha
-		 * @description Enables Google ReCaptcha
-		 */
-		if (plugins.captcha.length) {
-			$.getScript("//www.google.com/recaptcha/api.js?onload=onloadCaptchaCallback&render=explicit&hl=en");
-		}
 
 		/**
 		 * Is Mac os
@@ -887,8 +812,7 @@
 				};
 
 			for (i = 0; i < plugins.rdMailForm.length; i++) {
-				var $form = $(plugins.rdMailForm[i]),
-					formHasCaptcha = false;
+				var $form = $(plugins.rdMailForm[i]);
 
 				$form.attr('novalidate', 'novalidate').ajaxForm({
 					data: {
@@ -901,52 +825,11 @@
 
 						var form = $(plugins.rdMailForm[this.extraData.counter]),
 							inputs = form.find("[data-constraints]"),
-							output = $("#" + form.attr("data-form-output")),
-							captcha = form.find('.recaptcha'),
-							captchaFlag = true;
+							output = $("#" + form.attr("data-form-output"));
 
 						output.removeClass("active error success");
 
-						if (isValidated(inputs, captcha)) {
-
-							// veify reCaptcha
-							if (captcha.length) {
-								var captchaToken = captcha.find('.g-recaptcha-response').val(),
-									captchaMsg = {
-										'CPT001': 'Please, setup you "site key" and "secret key" of reCaptcha',
-										'CPT002': 'Something wrong with google reCaptcha'
-									};
-
-								formHasCaptcha = true;
-
-								$.ajax({
-									method: "POST",
-									url: "bat/reCaptcha.php",
-									data: {'g-recaptcha-response': captchaToken},
-									async: false
-								})
-									.done(function (responceCode) {
-										if (responceCode !== 'CPT000') {
-											if (output.hasClass("snackbars")) {
-												output.html('<p><span class="icon text-middle mdi mdi-check icon-xxs"></span><span>' + captchaMsg[responceCode] + '</span></p>')
-
-												setTimeout(function () {
-													output.removeClass("active");
-												}, 3500);
-
-												captchaFlag = false;
-											} else {
-												output.html(captchaMsg[responceCode]);
-											}
-
-											output.addClass("active");
-										}
-									});
-							}
-
-							if (!captchaFlag) {
-								return false;
-							}
+						if (isValidated(inputs)) {
 
 							form.addClass('form-in-process');
 
@@ -968,9 +851,6 @@
 						output.text(msg[result]);
 						form.removeClass('form-in-process');
 
-						if (formHasCaptcha) {
-							grecaptcha.reset();
-						}
 					},
 					success: function (result) {
 						if (isNoviBuilder)
@@ -983,10 +863,6 @@
 						form
 							.addClass('success')
 							.removeClass('form-in-process');
-
-						if (formHasCaptcha) {
-							grecaptcha.reset();
-						}
 
 						console.log('	result: ' + Object.keys(result));
 						result = result.message
@@ -1013,7 +889,6 @@
 						}
 
 						form.find('input, textarea').trigger('blur');
-						grecaptcha.reset();
 
 						setTimeout(function () {
 							output.removeClass("active error success");

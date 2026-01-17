@@ -59,7 +59,7 @@ This is a full-stack application that combines:
 ### `/mainwebsite`
 The core application with NestJS backend and React frontend.
 
-- **Backend** (`src/`): NestJS application with authentication, captcha, logging, and contact services
+- **Backend** (`src/`): NestJS application with authentication, logging, and contact services
 - **Frontend** (`react/`): React app built with Vite
 - **Public Assets** (`public/`): Static files, CSS, fonts, images, video
 - **Documentation**: See [START_HERE.md](mainwebsite/START_HERE.md) and [DEPLOYMENT_GUIDE.md](mainwebsite/DEPLOYMENT_GUIDE.md)
@@ -102,7 +102,7 @@ Build and run containerized services:
 docker build -t mainwebsite:latest ./mainwebsite
 
 # Run containers
-docker run -p 3000:80 mainwebsite:latest
+docker run -p 3000:8080 mainwebsite:latest
 ```
 
 ### Manually Push Images to Amazon ECR
@@ -208,6 +208,7 @@ helm install aws-info-website ./helm-dir -f helm-dir/values-prod.yaml    # Produ
 
 # Upgrade deployment
 helm upgrade aws-info-website ./helm-dir -f helm-dir/values-prod.yaml
+helm upgrade aws-info-website ./helm-dir -f helm-dir/values-dev.yaml
 
 # List Helm releases (current namespace)
 helm list
@@ -406,7 +407,6 @@ npm run build          # Build for production
 ## 🔐 Security
 
 - **Authentication**: OAuth/JWT implemented in backend
-- **Captcha**: reCAPTCHA integration for form protection
 - **Contact Form**: Mail form with PHP backend for inquiries
 
 ## 📊 Monitoring

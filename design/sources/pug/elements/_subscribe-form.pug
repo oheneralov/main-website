@@ -1,9 +1,0 @@
-mixin subscribe-form(classes)
-  - subscribeFormCounter += 1
-  // RD Mailform: Subscribe
-  form.rd-mailform.rd-mailform-inline.rd-mailform-sm(data-form-output="form-output-global" data-form-type='subscribe' method='post' action='bat/rd-mailform.php' class=classes)
-    .rd-mailform-inline-inner
-      .form-wrap
-        input.form-input(type="email" name="email" data-constraints="@Email @Required" id='subscribe-form-email-' + subscribeFormCounter)
-        label.form-label(for='subscribe-form-email-' + subscribeFormCounter) Enter your e-mail
-      button.button.form-button.button-sm.button-primary(type="submit") Subscribe

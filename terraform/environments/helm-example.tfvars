@@ -86,7 +86,6 @@ helm_set_values = {
 ################################################################################
 
 helm_set_sensitive_values = {
-  # "recaptchaSecret" = "your-secret-key"  # Commented out for security
   # "apiKey"          = "your-api-key"     # Commented out for security
 }
 
