@@ -1,5 +1,5 @@
 """
-Example usage and CLI for the RAG system.
+CLI interface for RAG system using Chroma as vector store.
 """
 
 import argparse

@@ -1,6 +1,5 @@
 """
 RAG (Retrieval-Augmented Generation) System using Chroma
-Example usage and demonstration of the RAG system.
 """
 
 import os
@@ -8,9 +7,7 @@ import os
 from chroma_rag import ChromaRAG
 from rag_pipeline import RAGPipeline
 
-def main():
-    """Example usage of ChromaRAG."""
-    
+def main():    
     # Initialize RAG system
     rag = ChromaRAG(
         persist_directory="./chroma_data",
@@ -18,22 +15,19 @@ def main():
         embedding_model="default"
     )
     
-    # Load documents from file
-    doc_path = os.path.join(os.path.dirname(__file__), "documents", "aws_services.txt")
-    
-    with open(doc_path, "r") as f:
-        input_docs = [line.strip() for line in f.readlines() if line.strip()]
-    
-    # Add documents
-    rag.add_documents_to_db(
-        documents=input_docs,
-        metadata=[
-            {"service": "EC2"},
-            {"service": "S3"},
-            {"service": "Lambda"},
-            {"service": "RDS"},
-            {"service": "DynamoDB"}
-        ]
+    # Load and ingest B2B contractor services document
+    doc_path = os.path.join(
+        os.path.dirname(__file__),
+        "documents",
+        "b2b_contractor_services.txt"
+    )
+
+    rag.add_documents_from_file(
+        file_path=doc_path,
+        metadata={
+            "service": "B2B Contractor Services",
+            "source": "documents/b2b_contractor_services.txt"
+        }
     )
     
     # Retrieve relevant documents

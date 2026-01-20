@@ -11,7 +11,10 @@ import logging
 import chromadb
 from chromadb.config import Settings
 from chromadb.utils import embedding_functions
-from langchain.text_splitter import MarkdownTextSplitter
+try:
+    from langchain_text_splitters import MarkdownTextSplitter
+except ImportError:
+    from langchain.text_splitter import MarkdownTextSplitter
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -49,14 +52,12 @@ class ChromaRAG:
         # Create persist directory if it doesn't exist
         os.makedirs(persist_directory, exist_ok=True)
         
-        # Initialize Chroma client with persistence
-        settings = Settings(
-            chroma_db_impl="duckdb+parquet",
-            persist_directory=persist_directory,
-            anonymized_telemetry=False
+        # Initialize persistent Chroma client using new API
+        settings = Settings(anonymized_telemetry=False)
+        self.client = chromadb.PersistentClient(
+            path=persist_directory,
+            settings=settings
         )
-        
-        self.client = chromadb.Client(settings)
         
         # Initialize embedding function
         if embedding_model == "default":
@@ -256,9 +257,15 @@ class ChromaRAG:
     
     def persist(self) -> None:
         """Persist the database to disk."""
-        try:
-            self.client.persist()
-            logger.info("Database persisted")
-        except Exception as e:
-            logger.error(f"Error persisting database: {e}")
-            raise
+        persist_method = getattr(self.client, "persist", None)
+        if callable(persist_method):
+            try:
+                persist_method()
+                logger.info("Database persisted")
+            except Exception as e:
+                logger.error(f"Error persisting database: {e}")
+                raise
+        else:
+            logger.info(
+                "Persistent client automatically stores data on disk; no manual persist needed"
+            )

@@ -1,0 +1,22 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment variables and secrets
+.env
+.env.local
+
+# Chroma persistence data
+chroma_data/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
