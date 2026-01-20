@@ -1,5 +1,8 @@
 # B2B Contractor Services: AI Development, MLOps, and DevOps Engineering
 
+## What service do you offer?
+I create web sites, RAG and chatbots.
+
 ## AI Development Services
 
 ### Custom Machine Learning Model Development

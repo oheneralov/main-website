@@ -1,5 +1,5 @@
 import React from 'react';
-import ContactForm from './ContactForm';
+import ChatbotDock from './ChatbotDock';
 
 const Footer: React.FC = () => {
   return (
@@ -30,13 +30,12 @@ const Footer: React.FC = () => {
                 <a href="#get-in-touch">Get In Touch</a>
               </li>
               <li>
-                <a href="#get-in-touch">Contacts</a>
+                <a href="#chat-with-me">Chatbot</a>
               </li>
             </ul>
           </div>
-          <div className="col-md-6 col-xl-3">
-            <h6>Contact Me</h6>
-            <ContactForm isFooter={true} />
+          <div className="col-md-6 col-xl-4">
+            <ChatbotDock />
           </div>
         </div>
         <p className="right">

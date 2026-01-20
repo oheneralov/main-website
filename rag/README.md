@@ -50,7 +50,7 @@ for result in results:
 
 ```bash
 # Add a file
-python cli.py add-file myfile.txt --chunk-size 500
+python cli.py add-file b2b_contractor_services.txt --chunk-size 500
 
 # Query documents
 python cli.py query "what is aws lambda"
@@ -64,6 +64,57 @@ python cli.py stats
 # Clear collection
 python cli.py clear
 ```
+
+### REST API
+
+Run the FastAPI server (defaults to port 8000):
+
+```bash
+uvicorn main:app --reload
+```
+
+Key endpoints:
+
+- `POST /documents` – ingest a file that already exists on the server.
+- `POST /query` – retrieve relevant chunks and generated context.
+- `GET /stats` – collection statistics.
+- `GET /health` – liveness probe.
+
+Example ingestion and query:
+
+```bash
+curl -X POST http://localhost:8000/documents \
+    -H "Content-Type: application/json" \
+    -d '{
+                "file_path": "documents/b2b_contractor_services.txt",
+                "metadata": {"source": "contractor_services"}
+            }'
+
+curl -X POST http://localhost:8000/query \
+    -H "Content-Type: application/json" \
+    -d '{"query": "Explain the AWS networking options", "k": 3}'
+```
+
+## Running the RAG Service Locally
+
+1. **Install dependencies**
+    ```bash
+    cd rag
+    python -m venv .venv
+    .venv\Scripts\activate  # or source .venv/bin/activate on macOS/Linux
+    pip install -r requirements.txt
+    ```
+2. **Start the FastAPI server** (listens on port 8000, which the React app expects)
+    ```bash
+    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    ```
+3. **Verify health**
+    ```bash
+    curl http://localhost:8000/health
+    ```
+    You should receive `{ "status": "ok" }`.
+4. **Connect the frontend**
+    The React chatbot points to `http://localhost:8000` via `VITE_RAG_API_BASE_URL`. Ensure the RAG server keeps running while you use `npm run dev` in `mainwebsite/`. Update `.env` if you deploy the service elsewhere.
 
 ## Configuration
 
