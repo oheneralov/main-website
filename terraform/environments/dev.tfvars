@@ -66,5 +66,5 @@ common_labels = {
   team        = "platform"
 }
 
-deploy_kubernetes_manifests = true
+deploy_kubernetes_manifests = false
 
