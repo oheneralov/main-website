@@ -1,5 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap');
 
+
+/* Temporarily hide ChatbotDock component */
+.chatbot-dock {
+  display: none !important;
+}
+
 .chatbot-dock {
   position: fixed;
   bottom: 2rem;

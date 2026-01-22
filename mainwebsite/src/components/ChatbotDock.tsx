@@ -47,6 +47,7 @@ const ChatbotDock: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isRagOnline, setIsRagOnline] = useState<boolean | null>(null);
   const dockRef = useRef<HTMLDivElement>(null);
   const dragOrigin = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
   const messageIdRef = useRef(initialMessages.length + 1);
@@ -66,6 +67,23 @@ const ChatbotDock: React.FC = () => {
       x: Math.min(Math.max(candidateX, minX), maxX),
       y: Math.min(Math.max(candidateY, minY), maxY),
     };
+  }, []);
+
+  // Check if RAG is online on mount
+  useEffect(() => {
+    const checkRagOnline = async () => {
+      try {
+        const response = await fetch(RAG_BASE_URL + '/health', { method: 'GET' });
+        if (response.ok) {
+          setIsRagOnline(true);
+        } else {
+          setIsRagOnline(false);
+        }
+      } catch {
+        setIsRagOnline(false);
+      }
+    };
+    checkRagOnline();
   }, []);
 
   useEffect(() => {
@@ -249,6 +267,31 @@ const ChatbotDock: React.FC = () => {
     void sendQueryToRag(prompt);
   };
 
+  // Only show chatbot if RAG is online
+  if (isRagOnline === null) {
+    // Still checking
+    return (
+      <div className="chatbot-dock chatbot-dock-loading" aria-live="polite" style={{ left: 16, top: 16 }}>
+        <div className="footer-chat-card">
+          <p>Checking knowledge base status...</p>
+        </div>
+      </div>
+    );
+  }
+  if (!isRagOnline) {
+    // RAG is offline
+    return (
+      <div className="chatbot-dock chatbot-dock-error" aria-live="polite" style={{ left: 16, top: 16 }}>
+        <div className="footer-chat-card">
+          <p className="footer-chat-error" role="alert">
+            The knowledge base is currently offline. Please try again later.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ...existing code...
   return (
     <div
       className={`chatbot-dock theme-${theme}${isDragging ? ' is-dragging' : ''}`}

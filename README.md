@@ -193,6 +193,67 @@ docker push "$Env:ECR_REGISTRY/mainwebsite:dev-latest"
 
 Use environment-specific tags (`staging-latest`, `1.0.0`, etc.) to match the values referenced in Helm (`mainwebsite.image.tag`).
 
+## 🌐 S3 Static Hosting & Route 53 DNS
+
+Use this flow when you need to publish the React/Vite marketing site as plain static files on Amazon S3 and map a friendly domain through Route 53.
+
+### 1. Build the site
+
+```bash
+cd mainwebsite
+npm install          # once
+npm run build        # emits dist/
+```
+
+The optimized bundle lands in `mainwebsite/dist/`; this folder is what you upload.
+
+### 2. Prepare the S3 bucket
+
+1. Create a bucket named after the public hostname (for example `aws-info.example.com`) in the target region.
+2. Enable “Static website hosting” and set both the index and error documents to `index.html` so React routing stays client-side.
+3. Block public ACLs and either:
+   - Attach an Origin Access Control/Identity if you front the bucket with CloudFront (recommended), or
+   - Apply a read-only bucket policy when serving directly from the S3 website endpoint.
+
+Sample public-read policy (only use when you are not fronting the bucket with CloudFront):
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowPublicRead",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::aws-info.example.com/*"
+    }
+  ]
+}
+```
+
+### 3. Upload the build artifacts
+
+```bash
+aws s3 sync mainwebsite/dist/ s3://oleksandrgeneralov.com --delete
+```
+
+Run this command after every new build so the bucket mirrors `dist/`. If you use CloudFront, follow up with an invalidation (`aws cloudfront create-invalidation --distribution-id <ID> --paths "/*"`).
+
+### 4. Attach the Route 53 DNS name
+
+1. In the hosted zone for your domain, add an A record that uses an Alias to either:
+   - The CloudFront distribution (preferred for TLS, caching, and OAC/OAI enforcement), or
+   - The S3 website endpoint if you are serving the bucket directly (note: HTTP-only).
+2. Repeat the record for `AAAA` if you want IPv6.
+3. Wait for propagation, then verify with `nslookup aws-info.example.com` or by loading the HTTPS URL in a browser.
+
+### Optional hardening
+
+- Automate the entire stack (bucket, policy, CloudFront, Route 53) with Terraform/CDK for repeatable environments.
+- Wire S3 or CloudFront access logs into CloudWatch/Athena for observability.
+- Consider enabling AWS WAF on CloudFront if you expect untrusted traffic.
+
 ## ☸️ Kubernetes Deployment
 
 Deploy to Kubernetes cluster using Helm:
@@ -470,4 +531,8 @@ For issues and questions:
 
 ---
 
-**Last Updated**: January 2, 2026
+**Last Updated**: January 21, 2026
+
+## Simplified workflow
+
+
