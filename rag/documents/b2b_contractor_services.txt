@@ -1,7 +1,44 @@
+
 # B2B Contractor Services: AI Development, MLOps, and DevOps Engineering
 
+## About Oleksandr Heneralov
+Senior AI Developer, MLOps & DevOps Expert with 10+ years of experience delivering advanced machine learning, cloud, and automation solutions for businesses across Europe. Proven track record in:
+- Building and optimizing AI agents, chatbots, and RAG systems
+- End-to-end ML model development, fine-tuning (LLM, LoRA), and deployment
+- Designing robust CI/CD pipelines and automating infrastructure with Terraform, Jenkins, and cloud-native tools
+- Managing cloud environments (AWS, GCP, Azure), Kubernetes, Docker, and Helm
+- Leading development teams and delivering production-ready solutions for startups and enterprises
+
+Key skills: Python, React, Node.js, LangChain, HuggingFace, FastAPI, Airflow, Prometheus, Grafana, ELK, and more. 
+Available for B2B contracts, remote or on-site in Poland/EU. 
+Contact: oheneralov@gmail.com | [LinkedIn](https://www.linkedin.com/in/oleksandr-heneralov-82389640/) | [Portfolio](http://oleksandrgeneralov.com/)
+
+
+
 ## What service do you offer?
-I create web sites, RAG and chatbots.
+I create production-grade AI solutions, web sites, RAG systems, and chatbots. I also provide end-to-end MLOps, DevOps, and cloud automation services for businesses seeking scalable, reliable, and innovative technology.
+
+## RAG (Retrieval-Augmented Generation) Solutions
+Specialized services for building, deploying, and maintaining RAG systems that combine Large Language Models (LLMs) with external data sources for advanced, context-aware AI applications.
+
+**RAG Expertise Includes:**
+- Design and implementation of RAG pipelines using LangChain, LangGraph, and HuggingFace
+- Integration with vector databases (Chroma, Pinecone, FAISS, etc.) for efficient document retrieval
+- Custom LLM fine-tuning (LoRA, QLoRA, etc.) for domain-specific knowledge
+- Prompt engineering and optimization for high-quality, context-rich responses
+- Secure, scalable deployment on AWS, GCP, Azure, or on-premises
+- Real-time and batch document ingestion, indexing, and retrieval
+- Web and API interfaces for RAG-powered chatbots and search systems
+- Monitoring, evaluation, and continuous improvement of RAG performance
+
+**Use Cases:**
+- Enterprise knowledge assistants
+- Automated document Q&A and semantic search
+- Customer support bots with up-to-date information
+- Research and compliance assistants
+- Custom RAG solutions for regulated industries
+
+Contact to discuss your RAG project or for a tailored solution.
 
 ## AI Development Services
 
@@ -97,6 +134,29 @@ Redundancy design ensuring system availability during component failures. Failov
 Version control of system configurations across all infrastructure. Automated configuration deployment ensuring consistency. Configuration templates for standardized deployments. Secrets management for sensitive configuration data. Configuration auditing tracking changes and who made them. Rollback capabilities for quick recovery from incorrect configurations.
 
 ## Cross-Functional Services
+
+---
+
+## Contacts
+**Oleksandr Heneralov**  
+Email: oheneralov@gmail.com  
+LinkedIn: https://www.linkedin.com/in/oleksandr-heneralov-82389640/  
+Portfolio: http://oleksandrgeneralov.com/
+
+---
+
+## Price List
+*All prices are indicative and may vary depending on project complexity, duration, and requirements. Contact for a custom quote.*
+
+| Service Area                | Rate (EUR/hour) | Notes                                 |
+|----------------------------|-----------------|---------------------------------------|
+| AI/ML Development          | 40–60          | Model design, training, fine-tuning    |
+| MLOps/DevOps Engineering   | 40–60          | CI/CD, cloud, automation, IaC          |
+| Web Development            | 40–60          | React, Node.js, frontend/backend       |
+| Consulting/Architecture    | 40–60          | Solution design, audits, workshops     |
+| Support & Maintenance      | 40–60          | Ongoing support, monitoring, updates   |
+
+*Discounts available for long-term contracts and startups. Invoicing: monthly or per milestone. B2B only.*
 
 ### AI Operations Integration
 Integration of machine learning systems with DevOps infrastructure. Model deployment automation through CI/CD pipelines. Monitoring and logging for AI systems and inference endpoints. Incident response and troubleshooting for ML systems. Scaling strategies for ML workloads. MLOps culture and practices adoption.
