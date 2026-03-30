@@ -1,14 +1,34 @@
-"""
-CLI interface for RAG system using Chroma as vector store.
-"""
-
 import argparse
 import json
 from pathlib import Path
-from main import ChromaRAG, RAGPipeline
+from chroma_rag import ChromaRAG
+from rag_pipeline import RAGPipeline
 from config import get_default_config
+import numpy as np
 
 
+def cmd_show_all(rag: ChromaRAG, args):
+    """Show all data from the collection: ids, embeddings, metadatas, documents."""
+    try:
+        def convert(obj):
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            if isinstance(obj, dict):
+                return {k: convert(v) for k, v in obj.items()}
+            if isinstance(obj, list):
+                return [convert(v) for v in obj]
+            return obj
+        all_data = rag.collection.get(include=["embeddings", "metadatas", "documents"])
+        safe_data = {
+            "ids": all_data.get("ids", []),
+            "embeddings": convert(all_data.get("embeddings", [])),
+            "metadatas": all_data.get("metadatas", []),
+            "documents": all_data.get("documents", [])
+        }
+        print(json.dumps(safe_data, indent=2))
+    except Exception as e:
+        print(f"Error retrieving all data: {e}")
+        
 def cmd_add_file(rag: ChromaRAG, args):
     """Add a file to the RAG system."""
     if not Path(args.file).exists():
@@ -123,10 +143,13 @@ def main():
     
     # Stats command
     subparsers.add_parser("stats", help="Show collection statistics")
-    
+
+    # Show all data command
+    subparsers.add_parser("show-all", help="Show all data in the collection (ids, embeddings, metadatas, documents)")
+
     # Clear command
     subparsers.add_parser("clear", help="Clear the collection")
-    
+
     # Augment command
     augment_parser = subparsers.add_parser(
         "augment",
@@ -153,6 +176,7 @@ def main():
         "add-file": cmd_add_file,
         "query": cmd_query,
         "stats": cmd_stats,
+        "show-all": cmd_show_all,
         "clear": cmd_clear,
         "augment": cmd_augment
     }

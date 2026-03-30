@@ -34,8 +34,19 @@ const Footer: React.FC = () => {
               </li>
             </ul>
           </div>
-          <div className="col-md-6 col-xl-4">
+          <div className="col-md-6 col-xl-2" style={{display: 'none'}}>
             <ChatbotDock />
+          </div>
+          <div className="col-md-6 col-xl-2">
+            <h6>Service</h6>
+            <ul className="list-marked list-marked-primary">
+              <li>
+                <a href="#devops">DevOps | MLOOps</a>
+              </li>
+              <li>
+                <a href="#ai">AI ( RAG | chatbots )</a>
+              </li>
+            </ul>
           </div>
         </div>
         <p className="right">

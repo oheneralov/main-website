@@ -4,6 +4,7 @@ Manages document storage, embeddings, and semantic search using Chroma.
 """
 
 import os
+import time
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 import logging
@@ -36,7 +37,8 @@ class ChromaRAG:
         self,
         persist_directory: str = "./chroma_data",
         collection_name: str = "documents",
-        embedding_model: str = "default"
+        embedding_model: str = "default",
+        hnsw_space: str = "cosine"
     ):
         """
         Initialize ChromaRAG system.
@@ -45,9 +47,11 @@ class ChromaRAG:
             persist_directory: Directory to persist Chroma database
             collection_name: Name of the collection for documents
             embedding_model: Embedding model to use
+            hnsw_space: HNSW space metric ("cosine", "l2", "ip")
         """
         self.persist_directory = persist_directory
         self.collection_name = collection_name
+        self.hnsw_space = hnsw_space
         
         # Create persist directory if it doesn't exist
         os.makedirs(persist_directory, exist_ok=True)
@@ -63,15 +67,20 @@ class ChromaRAG:
         if embedding_model == "default":
             self.embedding_fn = embedding_functions.DefaultEmbeddingFunction()
         else:
+            # Convert enum to string if needed
+            if hasattr(embedding_model, "value"):
+                model_name = embedding_model.value
+            else:
+                model_name = str(embedding_model)
             self.embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-                model_name=embedding_model
+                model_name=model_name
             )
         
         # Create or get collection
         self.collection = self.client.get_or_create_collection(
             name=collection_name,
             embedding_function=self.embedding_fn,
-            metadata={"hnsw:space": "cosine"}
+            metadata={"hnsw:space": self.hnsw_space}
         )
         
         logger.info(f"ChromaRAG initialized with collection: {collection_name}")
@@ -172,11 +181,14 @@ class ChromaRAG:
             Dictionary with documents, distances, and metadata
         """
         try:
+            start_time = time.perf_counter()
             results = self.collection.query(
                 query_texts=[query],
                 n_results=k,
                 where=filters
             )
+            elapsed_seconds = time.perf_counter() - start_time
+            logger.info(f"⏱️  retrieve(): {elapsed_seconds:.2f}s (vector search for top-{k})")
             
             return {
                 "documents": results["documents"][0] if results["documents"] else [],
@@ -203,9 +215,17 @@ class ChromaRAG:
         Returns:
             List of dictionaries with document, metadata, and score
         """
+        start_time = time.perf_counter()
         results = self.retrieve(query, k)
         
-        return [
+        results_zip = zip(
+            results["documents"],
+            results["metadatas"],
+            results["ids"],
+            results["distances"]
+        )
+        
+        formatted_results = [
             {
                 "document": doc,
                 "metadata": meta,
@@ -213,13 +233,13 @@ class ChromaRAG:
                 "distance": dist,
                 "similarity_score": 1 - dist  # Convert distance to similarity
             }
-            for doc, meta, doc_id, dist in zip(
-                results["documents"],
-                results["metadatas"],
-                results["ids"],
-                results["distances"]
-            )
+            for doc, meta, doc_id, dist in results_zip
         ]
+        
+        elapsed_seconds = time.perf_counter() - start_time
+        logger.info(f"⏱️  retrieve_with_scores(): {elapsed_seconds:.2f}s (including formatting)")
+        
+        return formatted_results
     
     def delete_document(self, doc_id: str) -> None:
         """Delete a document by ID."""

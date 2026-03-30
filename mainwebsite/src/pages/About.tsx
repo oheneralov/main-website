@@ -9,7 +9,7 @@ const About: React.FC = () => {
             <h3>About Me</h3>
             <div className="divider divider-default"></div>
             <p className="heading-5">
-              I am a senior fullstack ReactJS/NodeJS developer with a solid experience in DevOps (AWS and GCP). I am an expert bringing you innovative web and IT solutions that combine DevOps, AI and flawless functionality in every project.
+              I am a senior AI, MLOps, fullstack ReactJS/NodeJS/Python developer with a solid experience in DevOps (AWS and GCP). I am an expert bringing you innovative web and IT solutions that combine DevOps, AI and flawless functionality in every project.
             </p>
             <p className="text-spacing-sm">
               I provide IT services for companies all over the world. I operate on a managed services model that offers proactive outsourced IT services as well as design, development, and management services at affordable, consistent rates.

@@ -54,7 +54,7 @@ const Contact: React.FC = () => {
                     Oleksandr Generalov
                   </a>
                 </h5>
-                <p className="team-classic-job-position">Fullstack Developer</p>
+                <p className="team-classic-job-position">AI | MLOps | Fullstack Developer</p>
                 <a
                   className="button button-xs button-default-outline"
                   href="https://www.linkedin.com/in/oleksandr-heneralov-82389640/"

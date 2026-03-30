@@ -14,52 +14,29 @@ A production-ready RAG implementation using Chroma vector database for semantic 
 - **Similarity Scoring**: Get relevance scores for retrieved documents
 
 ## Installation
-
-```bash
 pip install -r requirements.txt
-```
+
 
 ## Quick Start
 
-### Python API
-
-```python
-from main import ChromaRAG, RAGPipeline
-
-# Initialize RAG system
-rag = ChromaRAG(
-    persist_directory="./chroma_data",
-    collection_name="my_documents"
-)
-
-# Add documents
-documents = [
-    "Document 1 content...",
-    "Document 2 content...",
-]
-rag.add_documents(documents)
-
-# Query documents
-results = rag.retrieve_with_scores("search query", k=5)
-for result in results:
-    print(f"Score: {result['similarity_score']:.3f}")
-    print(f"Content: {result['document']}")
-```
-
 ### CLI Usage
+**Note: CLI commands use embeddings for retrieval only. They do NOT invoke the LLM.**
 
 ```bash
 # Add a file
-python cli.py add-file b2b_contractor_services.txt --chunk-size 500
+python cli.py add-file qa.txt --chunk-size 500
 
-# Query documents
+# Query documents (vector search with similarity scores)
 python cli.py query "what is aws lambda"
 
-# Show augmented context for LLM
+# Show augmented context and prompt template for LLM (retrieval only, no generation)
 python cli.py augment "what is aws lambda" -k 3
 
-# View statistics
+# View collection statistics
 python cli.py stats
+
+# Show all documents, embeddings, metadata, and IDs (as JSON)
+python cli.py show-all
 
 # Clear collection
 python cli.py clear
@@ -69,9 +46,9 @@ python cli.py clear
 
 Run the FastAPI server (defaults to port 8000):
 
-```bash
 uvicorn main:app --reload
-```
+python -m uvicorn main:app --reload
+
 
 Key endpoints:
 
@@ -82,7 +59,7 @@ Key endpoints:
 
 Example ingestion and query:
 
-```bash
+
 curl -X POST http://localhost:8000/documents \
     -H "Content-Type: application/json" \
     -d '{
@@ -93,25 +70,25 @@ curl -X POST http://localhost:8000/documents \
 curl -X POST http://localhost:8000/query \
     -H "Content-Type: application/json" \
     -d '{"query": "Explain the AWS networking options", "k": 3}'
-```
+
 
 ## Running the RAG Service Locally
 
 1. **Install dependencies**
-    ```bash
+    
     cd rag
     python -m venv .venv
     .venv\Scripts\activate  # or source .venv/bin/activate on macOS/Linux
     pip install -r requirements.txt
-    ```
+    
 2. **Start the FastAPI server** (listens on port 8000, which the React app expects)
-    ```bash
+    
     uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-    ```
+    
 3. **Verify health**
-    ```bash
+    
     curl http://localhost:8000/health
-    ```
+    
     You should receive `{ "status": "ok" }`.
 4. **Connect the frontend**
     The React chatbot points to `http://localhost:8000` via `VITE_RAG_API_BASE_URL`. Ensure the RAG server keeps running while you use `npm run dev` in `mainwebsite/`. Update `.env` if you deploy the service elsewhere.
@@ -125,20 +102,6 @@ Edit `config.py` to customize:
 - Chunk size and overlap
 - Number of retrieval results
 
-## LangChain Integration
-
-```python
-from langchain_integration import ChromaRetriever
-
-rag = ChromaRAG()
-retriever = ChromaRetriever(rag)
-
-# Use with LangChain chains
-chain = RetrievalQA.from_chain_type(
-    llm=your_llm,
-    retriever=retriever
-)
-```
 
 ## Architecture
 
@@ -179,10 +142,4 @@ When combined, CoT provides transparent reasoning within each ReAct "thought" bl
 - **Batch Operations**: Add multiple documents at once
 - **Caching**: Chroma caches embeddings automatically
 
-## Use Cases
 
-- Document Q&A systems
-- Knowledge base search
-- Context-aware chatbots
-- Semantic document retrieval
-- Multi-document summarization
