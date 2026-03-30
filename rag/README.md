@@ -40,6 +40,10 @@ python cli.py show-all
 
 # Clear collection
 python cli.py clear
+
+### Code lint
+python -m ruff format .
+python lint.py
 ```
 
 ### REST API

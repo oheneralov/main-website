@@ -19,6 +19,7 @@ class ChunkSplitMethod(str, Enum):
 
 class LLMProvider(str, Enum):
     """Supported LLM providers."""
+
     LOCAL_HUGGINGFACE = "local_huggingface"
     OLLAMA = "ollama"
     OPENAI = "openai"
@@ -27,16 +28,23 @@ class LLMProvider(str, Enum):
 
 class LLMModel(str, Enum):
     """Supported LLM models."""
+
     # Lightweight models (< 7B parameters)
     TINYLLAMA_1_1B = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"  # 1.1B params, ~2-4GB VRAM
-    TINYLLAMA_1_1B_INT4_GGUF = "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF"  # 4-bit quantized, ~500MB
+    TINYLLAMA_1_1B_INT4_GGUF = (
+        "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF"  # 4-bit quantized, ~500MB
+    )
     TINYLLAMA_1_1B_INT8_GGUF = "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF"  # 8-bit quantized, ~1GB (use q8_0 variant)
-    TINYLLAMA_1_1B_AWQ = "TheBloke/TinyLlama-1.1B-Chat-v1.0-AWQ"  # AWQ quantized, ~700MB
+    TINYLLAMA_1_1B_AWQ = (
+        "TheBloke/TinyLlama-1.1B-Chat-v1.0-AWQ"  # AWQ quantized, ~700MB
+    )
     PHI_2 = "microsoft/phi-2"  # 2.7B params, ~4-8GB VRAM
     GEMMA_2B = "google/gemma-2b-it"  # 2B params, ~4-8GB VRAM
     QWEN_0_5B = "Qwen/Qwen1.5-0.5B-Chat"  # 0.5B params, ~1-2GB VRAM
     QWEN_0_5B_INT4_GGUF = "TheBloke/Qwen1.5-0.5B-Chat-GGUF"  # 4-bit quantized, ~200MB
-    QWEN_0_5B_INT8_GGUF = "TheBloke/Qwen1.5-0.5B-Chat-GGUF"  # 8-bit quantized, ~400MB (use q8_0 variant)
+    QWEN_0_5B_INT8_GGUF = (
+        "TheBloke/Qwen1.5-0.5B-Chat-GGUF"  # 8-bit quantized, ~400MB (use q8_0 variant)
+    )
     QWEN_0_5B_AWQ = "TheBloke/Qwen1.5-0.5B-Chat-AWQ"  # AWQ quantized, ~300MB
     QWEN_1_8B = "Qwen/Qwen1.5-1.8B-Chat"  # 1.8B params, ~3-5GB VRAM
     PHI_3_MINI = "microsoft/Phi-3-mini-4k-instruct"  # 3.8B params, ~8-10GB VRAM
@@ -55,6 +63,7 @@ class LLMModel(str, Enum):
 
 class EmbeddingModel(str, Enum):
     """Supported embedding models."""
+
     MINI_LM = "all-MiniLM-L6-v2"  # Weakest
     MINI_LM_L12 = "all-MiniLM-L12-v2"
     DISTILBERT = "distilbert-base-nli-stsb-mean-tokens"
@@ -83,6 +92,7 @@ class EmbeddingModel(str, Enum):
 
 class HNSWSpace(str, Enum):
     """HNSW space metric for vector database."""
+
     COSINE = "cosine"  # Best for semantic similarity (default)
     L2 = "l2"  # Euclidean distance (faster)
     IP = "ip"  # Inner product (fastest, requires normalized vectors)

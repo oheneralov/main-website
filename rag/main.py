@@ -1,20 +1,18 @@
-
-
-from pathlib import Path
-from typing import Any, Dict, Optional
 import logging
 from contextlib import asynccontextmanager
-import psutil
+from pathlib import Path
+from typing import Any, Dict, Optional
 
+import psutil
+import uvicorn
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from chroma_rag import ChromaRAG
 from config import get_default_config
 from rag_pipeline import RAGPipeline
-import uvicorn
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,42 +23,43 @@ def log_system_memory():
     """Log available system memory to verify LLM capacity."""
     memory = psutil.virtual_memory()
     swap = psutil.swap_memory()
-    
+
     total_gb = memory.total / (1024**3)
     available_gb = memory.available / (1024**3)
     used_gb = memory.used / (1024**3)
     percent = memory.percent
-    
+
     swap_total_gb = swap.total / (1024**3)
     swap_available_gb = swap.free / (1024**3)
     swap_used_gb = swap.used / (1024**3)
     swap_percent = swap.percent
-    
-    logger.info(f"📊 System Memory Report:")
+
+    logger.info("System Memory Report:")
     logger.info(f"   RAM Total: {total_gb:.2f} GB")
     logger.info(f"   RAM Available: {available_gb:.2f} GB")
     logger.info(f"   RAM Used: {used_gb:.2f} GB ({percent}%)")
     logger.info(f"   Swap Total: {swap_total_gb:.2f} GB")
     logger.info(f"   Swap Available: {swap_available_gb:.2f} GB")
     logger.info(f"   Swap Used: {swap_used_gb:.2f} GB ({swap_percent}%)")
-    
+
     # Log current process memory
     current_process = psutil.Process()
     process_memory_mb = current_process.memory_info().rss / (1024**2)
     logger.info(f"   This process (uvicorn): {process_memory_mb:.2f} MB")
-    
+
     if available_gb < 4.0:
-        logger.warning(f"⚠️  WARNING: Only {available_gb:.2f} GB available - may be insufficient for LLM")
+        logger.warning(
+            f"⚠️  WARNING: Only {available_gb:.2f} GB available - may be insufficient for LLM"
+        )
     else:
         logger.info(f"✅ Sufficient memory available for LLM ({available_gb:.2f} GB)")
-    
-    # Memory usage breakdown
-    logger.info(f"💡 Memory Usage Breakdown:")
-    logger.info(f"   LLM Model (QWEN 0.5B on CPU): ~1.5-2.5 GB typical")
-    logger.info(f"   Embedding Model (MiniLM): ~0.5-1.0 GB")
-    logger.info(f"   Chroma Vector DB: ~0.5-1.0 GB (depends on documents)")
-    logger.info(f"   System & Other: ~{used_gb - process_memory_mb/1024:.2f} GB")
 
+    # Memory usage breakdown
+    logger.info("Memory Usage Breakdown:")
+    logger.info("   LLM Model (QWEN 0.5B on CPU): ~1.5-2.5 GB typical")
+    logger.info("   Embedding Model (MiniLM): ~0.5-1.0 GB")
+    logger.info("   Chroma Vector DB: ~0.5-1.0 GB (depends on documents)")
+    logger.info(f"   System & Other: ~{used_gb - process_memory_mb / 1024:.2f} GB")
 
 
 config = get_default_config()
@@ -98,7 +97,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=False,
@@ -185,19 +189,22 @@ def clear_documents() -> JSONResponse:
 @app.post("/query")
 def query_documents(payload: QueryRequest) -> Dict[str, Any]:
     """Retrieve relevant chunks, generate LLM response for a query."""
+    assert pipeline is not None, "Pipeline not initialized"
     k_value = payload.k or config.retrieval_k
 
     try:
         logger.info(f"📝 Query received: {payload.query}")
-        
+
         # Augment query and get retrieved documents
         augmented = pipeline.augment_query(payload.query, k=k_value)
         logger.info(f"📚 Retrieved {augmented['num_documents']} documents")
-        
+
         # Generate LLM response
         llm_response = None
         if pipeline.llm is None:
-            logger.error("❌ LLM not initialized - no LLM provider available. Using raw context as fallback.")
+            logger.error(
+                "❌ LLM not initialized - no LLM provider available. Using raw context as fallback."
+            )
             llm_response = augmented["context"]
         else:
             try:
@@ -205,9 +212,11 @@ def query_documents(payload: QueryRequest) -> Dict[str, Any]:
                 llm_response = pipeline.generate_response(payload.query, k=k_value)
                 logger.info("✅ LLM response generated successfully")
             except Exception as llm_err:
-                logger.error(f"❌ LLM call failed: {llm_err}. Using raw context as fallback.")
+                logger.error(
+                    f"❌ LLM call failed: {llm_err}. Using raw context as fallback."
+                )
                 llm_response = augmented["context"]
-        
+
         prompt = pipeline.generate_prompt_with_context(payload.query, k=k_value)
     except Exception as exc:  # pragma: no cover - surfaced to client
         logger.error(f"❌ Query processing error: {exc}")
@@ -222,21 +231,28 @@ def query_documents(payload: QueryRequest) -> Dict[str, Any]:
         "llm_prompt": prompt,
     }
 
+
 """FastAPI entrypoint exposing the RAG system as a REST service."""
+
+
 @app.get("/documents/all")
 def get_all_documents() -> Dict[str, Any]:
     """Return all data from the collection: ids, embeddings, metadatas, documents."""
     try:
         # Get all documents, embeddings, metadatas, and ids
-        all_data = rag_system.collection.get(include=["embeddings", "metadatas", "documents"])
+        all_data = rag_system.collection.get(
+            include=["embeddings", "metadatas", "documents"]
+        )
         return {
             "ids": all_data.get("ids", []),
             "embeddings": all_data.get("embeddings", []),
             "metadatas": all_data.get("metadatas", []),
-            "documents": all_data.get("documents", [])
+            "documents": all_data.get("documents", []),
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 """FastAPI entrypoint exposing the RAG system as a REST service."""
 
 
